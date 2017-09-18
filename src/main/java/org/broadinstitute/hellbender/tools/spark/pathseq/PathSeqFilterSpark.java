@@ -1,6 +1,7 @@
 package org.broadinstitute.hellbender.tools.spark.pathseq;
 
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.metrics.MetricsFile;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.broadinstitute.barclay.argparser.Argument;
@@ -13,6 +14,7 @@ import org.broadinstitute.hellbender.cmdline.programgroups.PathSeqProgramGroup;
 import org.broadinstitute.hellbender.engine.spark.GATKSparkTool;
 import org.broadinstitute.hellbender.engine.spark.datasources.ReadsSparkSink;
 import org.broadinstitute.hellbender.exceptions.UserException;
+import org.broadinstitute.hellbender.metrics.MetricsUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadsWriteFormat;
 import scala.Tuple2;
@@ -66,6 +68,10 @@ public final class PathSeqFilterSpark extends GATKSparkTool {
             shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
             fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME)
     public String outputPath;
+    @Argument(doc = "Log counts of filtered reads to this file. May increase run time.",
+            fullName = "filterMetricsFile",
+            optional = true)
+    public String metricsFileUri = null;
 
     @ArgumentCollection
     public PSFilterArgumentCollection filterArgs = new PSFilterArgumentCollection();
@@ -80,12 +86,19 @@ public final class PathSeqFilterSpark extends GATKSparkTool {
 
         filterArgs.doReadFilterArgumentWarnings(getCommandLineParser().getPluginDescriptor(GATKReadFilterPluginDescriptor.class), logger);
         final SAMFileHeader header = PSUtils.checkAndClearHeaderSequences(getHeaderForReads(), filterArgs, logger);
+        final MetricsFile<PSFilterMetrics, Long> metricsFile = metricsFileUri != null ? getMetricsFile() : null;
 
-        final PSFilter filter = new PSFilter(ctx, filterArgs, getReads(), header);
+        final PSFilter filter = new PSFilter(ctx, filterArgs, header);
 
-        final Tuple2<JavaRDD<GATKRead>, JavaRDD<GATKRead>> result = filter.doFilter();
+        final JavaRDD<GATKRead> reads = getReads();
+        final Tuple2<JavaRDD<GATKRead>, JavaRDD<GATKRead>> result = filter.doFilter(reads, metricsFile);
         final JavaRDD<GATKRead> pairedReads = result._1;
         final JavaRDD<GATKRead> unpairedReads = result._2;
+
+        if (metricsFile != null) {
+            metricsFile.addMetric(filter.getFilterMetrics());
+            MetricsUtils.saveMetrics(metricsFile, metricsFileUri);
+        }
 
         if (!pairedReads.isEmpty()) {
             header.setSortOrder(SAMFileHeader.SortOrder.queryname);
@@ -99,6 +112,7 @@ public final class PathSeqFilterSpark extends GATKSparkTool {
         } else {
             logger.info("No unpaired reads to write - BAM will not be written.");
         }
+
         filter.close();
     }
 

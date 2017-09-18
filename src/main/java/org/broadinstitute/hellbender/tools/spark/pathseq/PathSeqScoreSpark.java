@@ -3,6 +3,7 @@ package org.broadinstitute.hellbender.tools.spark.pathseq;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMReadGroupRecord;
 import htsjdk.samtools.SAMSequenceRecord;
+import htsjdk.samtools.metrics.MetricsFile;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.broadinstitute.barclay.argparser.Argument;
@@ -15,6 +16,7 @@ import org.broadinstitute.hellbender.engine.spark.GATKSparkTool;
 import org.broadinstitute.hellbender.engine.spark.datasources.ReadsSparkSink;
 import org.broadinstitute.hellbender.engine.spark.datasources.ReadsSparkSource;
 import org.broadinstitute.hellbender.exceptions.UserException;
+import org.broadinstitute.hellbender.metrics.MetricsUtils;
 import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadsWriteFormat;
@@ -85,6 +87,11 @@ public class PathSeqScoreSpark extends GATKSparkTool {
             optional = true)
     public String outputPath = null;
 
+    @Argument(doc = "Log counts of mapped and unmapped reads to this file. May increase run time.",
+            fullName = "scoreMetricsFile",
+            optional = true)
+    public String metricsFileUri = null;
+
     @ArgumentCollection
     public PSScoreArgumentCollection scoreArgs = new PSScoreArgumentCollection();
 
@@ -144,6 +151,7 @@ public class PathSeqScoreSpark extends GATKSparkTool {
         }
 
         final ReadsSparkSource readsSource = new ReadsSparkSource(ctx, readArguments.getReadValidationStringency());
+        final MetricsFile<PSScoreMetrics, Long> metricsFile = metricsFileUri != null ? getMetricsFile() : null;
 
         //Load reads
         final Tuple2<JavaRDD<GATKRead>, SAMFileHeader> pairedData = readInputWithHeader(pairedInput, readsSource);
@@ -164,6 +172,11 @@ public class PathSeqScoreSpark extends GATKSparkTool {
         //Main tool routine
         final PSScorer scorer = new PSScorer(scoreArgs);
         final JavaRDD<GATKRead> readsFinal = scorer.scoreReads(ctx, pairedReads, unpairedReads, header);
+        if (metricsFileUri != null) {
+            final long numReads = readsFinal.count();
+            metricsFile.addMetric(PSScorer.getScoreMetrics(readsFinal, numReads));
+            MetricsUtils.saveMetrics(metricsFile, metricsFileUri);
+        }
 
         //Write reads to BAM, if specified
         //Note writeReads() is not used because we determine recommendedNumReducers differently with 2 input BAMs
