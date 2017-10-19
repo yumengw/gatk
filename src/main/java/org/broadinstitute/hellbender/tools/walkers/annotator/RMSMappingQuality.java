@@ -144,11 +144,18 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
      */
     @VisibleForTesting
     static int getNumOfReads(final VariantContext vc) {
+        /*if(vc.hasAttribute(GATKVCFConstants.VARIANT_DEPTH_KEY)) {
+            int VarDP = vc.getAttributeAsInt(GATKVCFConstants.VARIANT_DEPTH_KEY, 0);
+            if (VarDP > 0) {
+                return VarDP;
+            }
+        }*/
+
         //don't use the full depth because we don't calculate MQ for reference blocks
         int numOfReads = vc.getAttributeAsInt(VCFConstants.DEPTH_KEY, -1);
         if(vc.hasGenotypes()) {
             for(final Genotype gt : vc.getGenotypes()) {
-                if(gt.isHomRef()) {
+                if(gt.isHomRef() || (gt.isNoCall() && gt.hasPL() && gt.getPL()[0] == 0 && gt.getPL()[1] != 0)) { //pull out reference blocks, whether or not they have a called GT, but don't subtract depth from PL=[0,0,0] sites because they're still "variant"
                     //site-level DP contribution will come from MIN_DP for gVCF-called reference variants or DP for BP resolution
                     if (gt.hasExtendedAttribute(GATKVCFConstants.MIN_DP_FORMAT_KEY)) {
                         numOfReads -= Integer.parseInt(gt.getExtendedAttribute(GATKVCFConstants.MIN_DP_FORMAT_KEY).toString());

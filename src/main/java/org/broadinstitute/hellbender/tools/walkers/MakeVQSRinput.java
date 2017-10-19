@@ -194,7 +194,7 @@ public final class MakeVQSRinput extends VariantWalker {
 
         //Add in annotations
         final VariantContext reannotated = annotationEngine.annotateContext(mergedVC, features, ref, null, a -> true);
-        //TODO: do the QD calc here
+        //TODO: do I need InbreedingCoeff/ExcessHet?
         VariantContextBuilder builder = new VariantContextBuilder(RMSMappingQuality.getInstance().finalizeRawMQ(reannotated));
 
         final double QUALapprox = reannotated.getAttributeAsDouble(GATKVCFConstants.RAW_QUAL_APPROX_KEY, 0.0);
