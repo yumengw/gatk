@@ -226,4 +226,9 @@ final class AssemblyContigWithFineTunedAlignments {
             return new AssemblyContigWithFineTunedAlignments(kryo, input);
         }
     }
+
+    @Override
+    public String toString() {
+        return contig.toString() + "\n" + insertionMappings.toString();
+    }
 }
