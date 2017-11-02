@@ -198,6 +198,8 @@ public final class MakeVQSRinput extends VariantWalker {
         VariantContextBuilder builder = new VariantContextBuilder(RMSMappingQuality.getInstance().finalizeRawMQ(reannotated));
 
         final double QUALapprox = reannotated.getAttributeAsDouble(GATKVCFConstants.RAW_QUAL_APPROX_KEY, 0.0);
+        if(QUALapprox < genotypeArgs.STANDARD_CONFIDENCE_FOR_CALLING - 10*Math.log10(genotypeArgs.snpHeterozygosity))  //we don't apply the prior to the QUAL approx, so do it here
+            return;
         final int variantDP = reannotated.getAttributeAsInt(GATKVCFConstants.VARIANT_DEPTH_KEY, 0);
 
         double QD = QUALapprox / (double)variantDP;

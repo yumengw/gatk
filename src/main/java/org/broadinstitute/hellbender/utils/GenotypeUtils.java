@@ -1,9 +1,6 @@
 package org.broadinstitute.hellbender.utils;
 
-import htsjdk.variant.variantcontext.Allele;
-import htsjdk.variant.variantcontext.Genotype;
-import htsjdk.variant.variantcontext.GenotypesContext;
-import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.variantcontext.*;
 
 public final class GenotypeUtils {
     private GenotypeUtils(){}
@@ -12,7 +9,7 @@ public final class GenotypeUtils {
      * Returns true of the genotype is a called diploid genotype with likelihoods.
      */
     public static boolean isDiploidWithLikelihoods(final Genotype g) {
-        return Utils.nonNull(g).isCalled() && g.hasLikelihoods() && g.getPloidy() == 2;
+        return Utils.nonNull(g).hasLikelihoods() && g.getPloidy() == 2;
     }
 
     /**
@@ -34,9 +31,9 @@ public final class GenotypeUtils {
                                                               final boolean roundContributionFromEachGenotype){
         Utils.nonNull(vc, "vc");
         Utils.nonNull(genotypes, "genotypes");
-        final boolean doMultiallelicMapping = !vc.isBiallelic();
 
-        int idxAA = 0, idxAB = 1, idxBB = 2;
+        int idxAA = 0;
+        int idxAB;
 
         double refCount = 0;
         double hetCount = 0;
@@ -50,41 +47,27 @@ public final class GenotypeUtils {
             // Genotype::getLikelihoods returns a new array, so modification in-place is safe
             final double[] normalizedLikelihoods = MathUtils.normalizeFromLog10ToLinearSpace(g.getLikelihoods().getAsVector());
 
+            double refLikelihood = normalizedLikelihoods[idxAA];
+            double hetLikelihood = 0;
 
-            if (doMultiallelicMapping) {
-                if (g.isHetNonRef()) {
-                    //all likelihoods go to homCount
-                    homCount++;
-                    continue;
-                }
-
-                //get alternate allele for each sample
-                final Allele a1 = g.getAllele(0);
-                final Allele a2 = g.getAllele(1);
-                if (a2.isNonReference()) {
-                    final int[] idxVector = vc.getGLIndecesOfAlternateAllele(a2);
-                    idxAA = idxVector[0];
-                    idxAB = idxVector[1];
-                    idxBB = idxVector[2];
-                }
-                //I expect hets to be reference first, but there are no guarantees (e.g. phasing)
-                else if (a1.isNonReference()) {
-                    final int[] idxVector = vc.getGLIndecesOfAlternateAllele(a1);
-                    idxAA = idxVector[0];
-                    idxAB = idxVector[1];
-                    idxBB = idxVector[2];
-                }
+            //sum up contributions of all ref-alt hets into hetCount
+            for (final Allele currAlt : vc.getAlternateAlleles()) {
+                idxAB = GenotypeLikelihoods.calculatePLindex(0,vc.getAlleleIndex(currAlt));
+                hetLikelihood += normalizedLikelihoods[idxAB];
             }
 
             if( roundContributionFromEachGenotype ) {
-                refCount += MathUtils.fastRound(normalizedLikelihoods[idxAA]);
-                hetCount += MathUtils.fastRound(normalizedLikelihoods[idxAB]);
-                homCount += MathUtils.fastRound(normalizedLikelihoods[idxBB]);
+                refCount += MathUtils.fastRound(refLikelihood);
+                hetCount += MathUtils.fastRound(hetLikelihood);
+                homCount = 1 - MathUtils.fastRound(refLikelihood) - MathUtils.fastRound(hetLikelihood);
             } else {
-                refCount += normalizedLikelihoods[idxAA];
-                hetCount += normalizedLikelihoods[idxAB];
-                homCount += normalizedLikelihoods[idxBB];
+                refCount += refLikelihood;
+                hetCount += hetLikelihood;
+                homCount = 1 - refLikelihood - hetLikelihood;
             }
+
+
+
         }
         return new GenotypeCounts(refCount, hetCount, homCount);
     }

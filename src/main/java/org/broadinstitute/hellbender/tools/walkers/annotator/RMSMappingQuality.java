@@ -144,18 +144,28 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
      */
     @VisibleForTesting
     static int getNumOfReads(final VariantContext vc) {
-        /*if(vc.hasAttribute(GATKVCFConstants.VARIANT_DEPTH_KEY)) {
+        if(vc.hasAttribute("MQ_DP")) {
             int VarDP = vc.getAttributeAsInt(GATKVCFConstants.VARIANT_DEPTH_KEY, 0);
             if (VarDP > 0) {
                 return VarDP;
             }
-        }*/
+        }
 
         //don't use the full depth because we don't calculate MQ for reference blocks
+        //don't count spanning deletion calls towards number of reads
         int numOfReads = vc.getAttributeAsInt(VCFConstants.DEPTH_KEY, -1);
         if(vc.hasGenotypes()) {
             for(final Genotype gt : vc.getGenotypes()) {
+                //TODO: pull this conditional and the one below out into a method
                 if(gt.isHomRef() || (gt.isNoCall() && gt.hasPL() && gt.getPL()[0] == 0 && gt.getPL()[1] != 0)) { //pull out reference blocks, whether or not they have a called GT, but don't subtract depth from PL=[0,0,0] sites because they're still "variant"
+                    //site-level DP contribution will come from MIN_DP for gVCF-called reference variants or DP for BP resolution
+                    if (gt.hasExtendedAttribute(GATKVCFConstants.MIN_DP_FORMAT_KEY)) {
+                        numOfReads -= Integer.parseInt(gt.getExtendedAttribute(GATKVCFConstants.MIN_DP_FORMAT_KEY).toString());
+                    } else if (gt.hasDP()) {
+                        numOfReads -= gt.getDP();
+                    }
+                }
+                else if(hasSpanningDeletionAllele(gt)) {
                     //site-level DP contribution will come from MIN_DP for gVCF-called reference variants or DP for BP resolution
                     if (gt.hasExtendedAttribute(GATKVCFConstants.MIN_DP_FORMAT_KEY)) {
                         numOfReads -= Integer.parseInt(gt.getExtendedAttribute(GATKVCFConstants.MIN_DP_FORMAT_KEY).toString());
@@ -169,6 +179,16 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
             numOfReads = -1;  //return -1 to result in a NaN
         }
         return numOfReads;
+    }
+
+    private static boolean hasSpanningDeletionAllele(final Genotype gt) {
+        for(final Allele a : gt.getAlleles()) {
+            boolean hasSpanningDeletion = GATKVCFConstants.isSpanningDeletion(a);
+            if(hasSpanningDeletion) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static RMSMappingQuality getInstance() {
