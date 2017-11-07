@@ -59,11 +59,11 @@ public final class GenotypeUtils {
             if( roundContributionFromEachGenotype ) {
                 refCount += MathUtils.fastRound(refLikelihood);
                 hetCount += MathUtils.fastRound(hetLikelihood);
-                homCount = 1 - MathUtils.fastRound(refLikelihood) - MathUtils.fastRound(hetLikelihood);
+                homCount += 1 - MathUtils.fastRound(refLikelihood) - MathUtils.fastRound(hetLikelihood);
             } else {
                 refCount += refLikelihood;
                 hetCount += hetLikelihood;
-                homCount = 1 - refLikelihood - hetLikelihood;
+                homCount += 1 - refLikelihood - hetLikelihood;
             }
 
 
