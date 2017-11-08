@@ -55,11 +55,13 @@ public final class GenotypeUtils {
                 idxAB = GenotypeLikelihoods.calculatePLindex(0,vc.getAlleleIndex(currAlt));
                 hetLikelihood += normalizedLikelihoods[idxAB];
             }
-
+            //NOTE: rounding is special cased for [0,0,X] PLs  ([X,0,0] isn't a problem)
             if( roundContributionFromEachGenotype ) {
                 refCount += MathUtils.fastRound(refLikelihood);
-                hetCount += MathUtils.fastRound(hetLikelihood);
-                homCount += 1 - MathUtils.fastRound(refLikelihood) - MathUtils.fastRound(hetLikelihood);
+                if (refLikelihood != hetLikelihood) {   //if GQ = 0 (specifically [0,0,X] PLs) count as homRef and don't add to the other counts
+                    hetCount += MathUtils.fastRound(hetLikelihood);
+                    homCount += 1 - MathUtils.fastRound(refLikelihood) - MathUtils.fastRound(hetLikelihood);
+                }
             } else {
                 refCount += refLikelihood;
                 hetCount += hetLikelihood;
