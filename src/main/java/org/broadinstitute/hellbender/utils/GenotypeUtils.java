@@ -1,6 +1,7 @@
 package org.broadinstitute.hellbender.utils;
 
 import htsjdk.variant.variantcontext.*;
+import picard.util.MathUtil;
 
 public final class GenotypeUtils {
     private GenotypeUtils(){}
@@ -33,44 +34,70 @@ public final class GenotypeUtils {
         Utils.nonNull(genotypes, "genotypes");
 
         int idxAA = 0;
-        int idxAB;
+        int idxAB = 1;
+        int idxBB = 2;
 
         double refCount = 0;
         double hetCount = 0;
-        double homCount = 0;
+        double varCount = 0;
 
         for (final Genotype g : genotypes) {
             if (! isDiploidWithLikelihoods(g)){
                 continue;
             }
 
+            double[] PLs = g.getLikelihoods().getAsVector();
             // Genotype::getLikelihoods returns a new array, so modification in-place is safe
-            final double[] normalizedLikelihoods = MathUtils.normalizeFromLog10ToLinearSpace(g.getLikelihoods().getAsVector());
+            final double[] normalizedLikelihoods = MathUtils.normalizeFromLog10ToLinearSpace(PLs);
+            final double[] biallelicLikelihoods;
 
-            double refLikelihood = normalizedLikelihoods[idxAA];
-            double hetLikelihood = 0;
-
-            //sum up contributions of all ref-alt hets into hetCount
-            for (final Allele currAlt : vc.getAlternateAlleles()) {
-                idxAB = GenotypeLikelihoods.calculatePLindex(0,vc.getAlleleIndex(currAlt));
-                hetLikelihood += normalizedLikelihoods[idxAB];
+            //if there are multiple alts, use the biallelic PLs for the best alt
+            if (vc.getAlternateAlleles().size() > 1 ) {
+                //check for
+                int maxInd = MathUtil.indexOfMax(normalizedLikelihoods);
+                GenotypeLikelihoods.GenotypeLikelihoodsAllelePair alleles = GenotypeLikelihoods.getAllelePair(maxInd);
+                if (alleles.alleleIndex1 != 0 && alleles.alleleIndex2 != 0) {
+                    //all likelihoods go to varCount because no ref allele is called
+                    varCount++;
+                    continue;
+                }
+                double maxLikelihood = normalizedLikelihoods[idxAB];
+                int hetIndex = idxAB;
+                int varIndex = idxBB;
+                for (final Allele currAlt : vc.getAlternateAlleles()) {
+                    final int[] idxVector = vc.getGLIndecesOfAlternateAllele(currAlt);
+                    int tempIndex = idxVector[1];
+                    if (normalizedLikelihoods[tempIndex] > maxLikelihood) {
+                        maxLikelihood = normalizedLikelihoods[tempIndex];
+                        hetIndex = tempIndex;
+                        varIndex = idxVector[2];
+                    }
+                }
+                biallelicLikelihoods = MathUtils.normalizeFromRealSpace(new double[] {normalizedLikelihoods[idxAA], normalizedLikelihoods[hetIndex], normalizedLikelihoods[varIndex]});
             }
-            //NOTE: rounding is special cased for [0,0,X] PLs  ([X,0,0] isn't a problem)
+            else {
+                biallelicLikelihoods = normalizedLikelihoods;
+            }
+
+            double refLikelihood = biallelicLikelihoods[idxAA];
+            double hetLikelihood = biallelicLikelihoods[idxAB];
+            double varLikelihood = biallelicLikelihoods[idxBB];
+
+            //NOTE: rounding is special cased for [0,0,X] and [X,0,0] PLs because likelihoods can come out as [0.5, 0.5, 0] and both counts round up
             if( roundContributionFromEachGenotype ) {
                 refCount += MathUtils.fastRound(refLikelihood);
                 if (refLikelihood != hetLikelihood) {   //if GQ = 0 (specifically [0,0,X] PLs) count as homRef and don't add to the other counts
                     hetCount += MathUtils.fastRound(hetLikelihood);
-                    homCount += 1 - MathUtils.fastRound(refLikelihood) - MathUtils.fastRound(hetLikelihood);
+                }
+                if (varLikelihood != hetLikelihood) {  //if GQ = 0 (specifically [X,0,0] PLs) count as het and don't count as variant
+                    varCount += MathUtils.fastRound(varLikelihood); //need specific varCount (rather than complement of the others) for PL[0,0,0] case
                 }
             } else {
                 refCount += refLikelihood;
                 hetCount += hetLikelihood;
-                homCount += 1 - refLikelihood - hetLikelihood;
+                varCount += varLikelihood;
             }
-
-
-
         }
-        return new GenotypeCounts(refCount, hetCount, homCount);
+        return new GenotypeCounts(refCount, hetCount, varCount);
     }
 }
