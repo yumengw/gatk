@@ -111,8 +111,8 @@ public final class RMSMappingQuality extends InfoFieldAnnotation implements Stan
         if (rawMQdata == null) {
             return vc;
         } else {
+            final int numOfReads = vc.getAttributeAsInt("MQ_DP", getNumOfReads(vc));
             final double squareSum = parseRawDataString(rawMQdata);
-            final int numOfReads = getNumOfReads(vc);
             final double rms = Math.sqrt(squareSum / (double)numOfReads);
             final String finalizedRMSMAppingQuality = formattedValue(rms);
             return new VariantContextBuilder(vc)
