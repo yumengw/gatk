@@ -1,7 +1,6 @@
 package org.broadinstitute.hellbender.utils.runtime;
 
 import htsjdk.samtools.util.BufferedLineReader;
-import org.broadinstitute.hellbender.utils.python.StreamingPythonScriptExecutor;
 import org.broadinstitute.hellbender.utils.test.BaseTest;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -9,25 +8,18 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 
-import static java.lang.Thread.sleep;
-
-// NOTE: Python has bugs where it sometimes prints the prompt to stdout, and sometimes to stderr:
+// NOTE: some Python implementations have bugs where sometimes the prompt is printed to stdout,
+// and sometimes to stderr:
 //
-// https://bugs.python.org/issue17620
-// https://bugs.python.org/issue1927
+//  https://bugs.python.org/issue17620
+//  https://bugs.python.org/issue1927
 //
-// Beware TestNG has a bug where it throws ArrayIndexOutOfBoundsException instead of TimeoutException
+// NOTE: TestNG has a bug where it throws ArrayIndexOutOfBoundsException instead of TimeoutException
 // exception when the test time exceeds the timeOut threshold. This is fixed but not yet released:
 //
 //  https://github.com/cbeust/testng/issues/1493
-//
-//
-// test non-blocking isOutputAvailable
-// test process that reads command line and exits (like ls)
-// test journal
 //
 
 public class StreamingProcessControllerUnitTest extends BaseTest {
@@ -69,7 +61,7 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         Assert.assertFalse(controller.getProcess().isAlive());
     }
 
-    @Test(timeOut = 50000)
+    @Test(timeOut = 10000)
     public void testMultipleParallelStreamingControllers() throws TimeoutException {
         final ProcessSettings catProcessSettings = new ProcessSettings(new String[] {"cat"});
         final StreamingProcessController catController = new StreamingProcessController(catProcessSettings);
@@ -98,7 +90,7 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         Assert.assertFalse(teeController.getProcess().isAlive());
     }
 
-    @Test(timeOut = 50000)
+    @Test(timeOut = 10000)
     public void testStartupCommandExecution() throws TimeoutException, IOException {
         final String writeOutTemplate = "fd=open('%s', 'w')\nfd.write('some output\\n')\nfd.close()\n";
         final File tempFile = createTempFile("streamingControllerStartupCommand", ".txt");
@@ -118,9 +110,10 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         }
     }
 
-    @Test(invocationCount = 10, invocationTimeOut = 10000) // make sure the test timeout exceeds the controller timeout, since we want to trigger that
+    // using invocationTimeOut seems to be buggy and causes this to stop after one invocation
+    //@Test(invocationCount = 10, invocationTimeOut = 10000)
+    @Test(timeOut = 10000) // make sure the test timeout exceeds the controller timeout, since we want to trigger that
     public void testIsOutputAvailable() throws TimeoutException, InterruptedException {
-
         // start an interactive Python session with unbuffered IO
         final ProcessSettings processSettings = new ProcessSettings(new String[] {"python", "-i", "-u"});
 
@@ -130,6 +123,12 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         controller.getProcessOutputByPrompt();
 
         Assert.assertFalse(controller.isOutputAvailable());
+        controller.writeProcessInput("a = 3" + NL);
+        while (!controller.isOutputAvailable()) {
+            // scary, but TetNG will throw if we exceed the timeout
+        };
+        Assert.assertTrue(controller.isOutputAvailable());
+
         Assert.assertTrue(controller.terminate());
         Assert.assertFalse(controller.getProcess().isAlive());
     }
@@ -156,7 +155,7 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         Assert.assertFalse(controller.getProcess().isAlive());
     }
 
-    @Test(timeOut = 50000)
+    @Test(timeOut = 10000)
     public void testStderrRedirect() throws TimeoutException {
         // test write to stderr from python
         // start an interactive Python session with unbuffered IO
@@ -166,7 +165,7 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         processSettings.setRedirectErrorStream(true);
 
         final StreamingProcessController controller = new StreamingProcessController(processSettings, PYTHON_PROMPT);
-        Assert.assertTrue(controller.start());
+        Assert.assertNotNull(controller.start());
         // consume the Python startup banner debris, but don't try validate it
         controller.getProcessOutputByPrompt();
 
@@ -182,7 +181,7 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         Assert.assertFalse(controller.getProcess().isAlive());
     }
 
-    @Test(timeOut = 50000)
+    @Test(timeOut = 10000)
     public void testFIFOLifetime() throws TimeoutException {
         // cat is a red herring here; we're just testing that a FIFO is created, and then deleted after termination
         final ProcessSettings catProcessSettings = new ProcessSettings(new String[] {"cat"});
@@ -200,7 +199,9 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         Assert.assertFalse(catController.getProcess().isAlive());
     }
 
-    @Test(timeOut = 50000, expectedExceptions=TimeoutException.class)
+    // this needs to have a testNG timeOut that is longer than the built-in timeout, to ensure that we hit
+    // the builtin one first
+    @Test(timeOut = 10000, expectedExceptions=TimeoutException.class)
     public void testPromptTimeout() throws TimeoutException {
         // start an interactive Python session with unbuffered IO
         final ProcessSettings processSettings = new ProcessSettings(new String[] {"python", "-i", "-u"});

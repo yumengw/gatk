@@ -32,8 +32,9 @@ public final class CapturedStreamOutputSnapshot extends CapturedStreamOutput {
     public boolean read() throws IOException {
         try {
             byte[] buf = new byte[CapturedStreamOutput.STREAM_BLOCK_TRANSFER_SIZE];
+            // keep reading until there is no data more available
             do {
-                int readCount = processStream.read(buf);
+                final int readCount = processStream.read(buf);
                 if (readCount == -1) {
                     return false;
                 }

@@ -9,8 +9,7 @@ import org.broadinstitute.hellbender.utils.Utils;
 
 import java.io.*;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 /**
  * Facade to Runtime.exec() and java.lang.Process.  Handles running an interactive, keep-alive process and returns
@@ -25,14 +24,15 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     private File fifoTempDir = null;
     private File fifoFile = null;
 
-    // Timeout to prevent the GATK main tool thread from hanging.
-    private final int timeOutCycleMillis = 1000;
-    private final int timeOutCycles = 5;
+    // Timeout used when retrieving output from the remote process to prevent the GATK main tool thread from\
+    // excessive blocking. {@link #isOutputAvailable} can be used to to check for output before making a
+    // blocking call in order to avoid exceeding timeouts.
+    private final int timeOutMillis = 5000;
 
     // keep an optional journal of all IPC; disabled/no-op by default
     private ProcessJournal processJournal = new ProcessJournal();
 
-    private OutputStream processStdinStream; // stream via which we send remote commands
+    private OutputStream processStdinStream; // stream to which we send remote commands
 
     /**
      * @param settings Settings to be used.
@@ -44,7 +44,7 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     /**
      * Create a controller using the specified settings.
      *
-     * @param settings Settings to be run.
+     * @param settings                 Settings to be run.
      * @param promptForSynchronization Prompt to be used as a synchronization point/boundary for retrieving process
      *                                 output. Blocking calls that retrieve data will block until a prompt-terminated
      *                                 block is available.
@@ -56,11 +56,11 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     /**
      * Create a controller using the specified settings.
      *
-     * @param settings Settings to be run.
+     * @param settings                 Settings to be run.
      * @param promptForSynchronization Prompt to be used as a synchronization point/boundary for blocking calls that
-     *                                retrieve process output.
-     * @param enableJournaling Turn on process I/O journaling. This records all inter-process communication to a file.
-     *                         Journaling incurs a performance penalty, and should be used for debugging purposes only.
+     *                                 retrieve process output.
+     * @param enableJournaling         Turn on process I/O journaling. This records all inter-process communication to a file.
+     *                                 Journaling incurs a performance penalty, and should be used for debugging purposes only.
      */
     public StreamingProcessController(
             final ProcessSettings settings,
@@ -72,14 +72,6 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
 
         if (enableJournaling) {
             processJournal.enable(settings.getCommandString());
-        }
-
-        stdoutCapture = new OutputCapture(this, controllerThreadGroup, this.getClass().getSimpleName(), ProcessStream.Stdout, controllerId);
-        stdoutCapture.start();
-        if (!settings.isRedirectErrorStream()) {
-            // don't waste a thread on stderr if its just going to be redirected to stdout
-            stderrCapture = new OutputCapture(this, controllerThreadGroup, this.getClass().getSimpleName(), ProcessStream.Stderr, controllerId);
-            stderrCapture.start();
         }
     }
 
@@ -93,20 +85,43 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
             throw new IllegalStateException("This controller is already running a process");
         }
         process = launchProcess(settings);
-        registerOutputListeners();
+        startListeners();
         processStdinStream = getProcess().getOutputStream();
 
         return process.isAlive();
     }
 
     /**
-     * Write some input to the remote process.
+     * Write some input to the remote process, without waiting for output.
      *
-     * @param line
+     * @param line data to be written to the remote process
      */
     public void writeProcessInput(final String line) {
         try {
-            // get an output stream on the process' input
+            // Its possible that we already have completed futures from output from a previous command that
+            // weren't consumed before we found the prompt at the last synchronization point. If so, drop them
+            // before we issue a new command (since retaining them could confound synchronization on output from
+            // this command), and warn.
+            if (stdErrFuture != null && stdErrFuture.isDone()) {
+                //logger.warn("Dropping stale stderr output: {}", stdErrFuture.get().getBufferString());
+                processJournal.writeLogMessage("Dropping stale stderr output: " + stdErrFuture.get().getBufferString());
+                stdErrFuture = null;
+            }
+            if (stdOutFuture != null && stdOutFuture.isDone()) {
+                //logger.warn("Dropping stale stdout output: {}", stdOutFuture.get().getBufferString());
+                processJournal.writeLogMessage("Dropping stale stdout output: " + stdOutFuture.get().getBufferString());
+                stdOutFuture = null;
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(String.format("Interrupted retrieving stale future: " + line, e));
+        } catch (ExecutionException e) {
+            throw new RuntimeException(String.format("Execution exception retrieving stale future: " + line, e));
+        }
+
+        startListeners();
+
+        try {
+            // write to the output stream that is the process' input
             processStdinStream.write(line.getBytes());
             processStdinStream.flush();
             processJournal.writeOutbound(line);
@@ -115,19 +130,14 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
         }
     }
 
-    public int getDefaultTimeoutMillis() {
-        return timeOutCycleMillis * timeOutCycleMillis;
-    }
-
     /**
-     * Non-blocking call to see if output is available. It is always safe to call getAccumulatedOutput immediately
+     * Non-blocking call to see if output is available. It is always safe to retrieve output immediately
      * after this returns true.
-     * @return
+     *
+     * @return true if output is currently available, and output can safely be retrieved without blocking
      */
     public boolean isOutputAvailable() {
-        synchronized (fromCapture) {
-            return fromCapture.containsKey(ProcessStream.Stderr) || fromCapture.containsKey(ProcessStream.Stdout);
-        }
+        return (stdOutFuture != null && stdOutFuture.isDone()) || (stdErrFuture != null && stdErrFuture.isDone());
     }
 
     /**
@@ -135,7 +145,7 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
      * data from the remote process until it receives a prompt on either the stdout or stderr stream, or
      * the timeout is reached.
      *
-     * Use isOutputAvailable to ensure the the thread will not block
+     * Use isOutputAvailable to ensure the the thread will not block.
      *
      * @return ProcessOutput containing a prompt terminated string in either std or stderr
      * @throws TimeoutException if the timeout is exceeded an no output is available
@@ -148,8 +158,8 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     }
 
     /**
-     * Blocking call to retrieve output from the remote process by prompt synchronization. This call collects
-     * data from the remote process until it receives a prompt on either the stdout or stderr stream or
+     * Blocking call to retrieve output from the remote process by line. This call collects
+     * data from the remote process until it receives a terminated line on either the stdout or stderr stream, or
      * the timeout is reached.
      *
      * @return ProcessOutput containing a newline terminated string in either std or stderr
@@ -202,72 +212,120 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     }
 
     /**
-     * Wait for any output from the process; uses a timeout to prevent the calling thread from hanging.
-     * Use isOutputAvailable for non-blocking check.
+     * Wait for *any* output from the process (to stdout or stderr), by draining the stream(s) until no more
+     * output is available. Uses a timeout to prevent the calling thread from hanging. Use isOutputAvailable
+     * for non-blocking check.
      */
     private ProcessOutput getProcessOutput() throws TimeoutException {
         StreamOutput stdout = null;
         StreamOutput stderr = null;
-        registerOutputListeners();
-        int cycles = 0;
-        while (!destroyed && stdout == null && stderr == null) {
-            synchronized (fromCapture) {
-                if (fromCapture.containsKey(ProcessStream.Stderr)) {
-                    stderr = fromCapture.remove(ProcessStream.Stderr);
+        boolean gotStdErrTimeout = false;
+
+        // We need to ensure that we get output from either stdout or stderr, or both when available, but we don't
+        // want to block waiting for output that may never materialize on a second stream if we have already have
+        // output in hand from one. So, we optimistically return whatever we can get within the timeout period.
+        // Failure to do so would kill performance by ensuring that we ALWAYS block until timeout whenever output
+        // is only written to one stream but not the other, which is a common case. So optimistically return
+        // whatever we can get, and let the caller  decide whether to make another call to this method to get
+        // more output in order to reach a synchronization point.
+        //
+        // TODO: Its possible this could be done using an ExecutorCompletionService:
+        // ExecutorService can wait on multiple futures, but it either returns a single completed Future (invokeAny)
+        // for the first stream that completes (cancelling the others and thus dropping that output), or waits for
+        // all to complete (invokeAll), which always blocks and times out if there is only output on one stream.
+        try {
+            if (stdErrFuture != null) {
+                // before we risk a timeout looking for stderr, see if stdout is available, and if so, just take that
+                if (stdErrFuture.isDone()) {
+                    stderr = stdErrFuture.get();
+                    stdErrFuture = null;
+                } else if (stdOutFuture == null || !stdOutFuture.isDone()) {
+                    // neither stderr nor stdout is ready, so start our timeout on stderr
+                    stderr = stdErrFuture.get(timeOutMillis, TimeUnit.MILLISECONDS);
+                    stdErrFuture = null;
                 }
-                if (fromCapture.containsKey(ProcessStream.Stdout)) {
-                    stdout = fromCapture.remove(ProcessStream.Stdout);
-                }
-                if (stdout == null && stderr == null) {
-                    try {
-                        // Block waiting for something to happen or timeout. We do this in cycles
-                        // in order to detect timeouts.
-                        if (cycles > timeOutCycles) {
-                            throw new TimeoutException("Timeout waiting for process output");
-                        }
-                        cycles++;
-                        fromCapture.wait(timeOutCycleMillis, 0);
-                    } catch (InterruptedException e) {
-                        // Log the error, ignore the interrupt and wait patiently
-                        // for the OutputCaptures to (via finally) return their
-                        // stdout and stderr.
-                        logger.error(e);
-                    }
-                }
+                // else, no stderr, but stdout is done, so fall through to pick that up
             }
+        } catch (TimeoutException e) {
+            gotStdErrTimeout = true;
+            if (!stdOutFuture.isDone()) { // we exceeded the stderr timeout and there is no stdout
+                throw e;
+            }
+        } catch (InterruptedException e) {
+            throw new GATKException("InterruptedException out", e);
+        } catch (ExecutionException e) {
+            throw new GATKException("ExecutionException out", e);
         }
 
+        try {
+            if (gotStdErrTimeout) {
+                // we already exceeded our timeout on stderr; so don't timeout again; bail if we can't get stdout now
+                if (stdOutFuture != null && stdOutFuture.isDone()) {
+                    stdout = stdOutFuture.get();
+                    stdOutFuture = null;
+                } else { // stderr timeout, and no stdout to read
+                    throw new TimeoutException("No stdout or stderr was available. The timeout period was exceeded.");
+                }
+            } else { // no stderr timeout, try to get stdout
+                if (stdOutFuture != null) {
+                    if (stdOutFuture.isDone()) {
+                        // stdout is done; take it directly
+                        stdout = stdOutFuture.get();
+                        stdOutFuture = null;
+                    } else if (stderr == null) {
+                        // no stderr timeout, and stdout isn't done, so use our timeout on stdout
+                        stdout = stdOutFuture.get(timeOutMillis, TimeUnit.MILLISECONDS);
+                    } else {
+                        // no stderr timeout, and no stdout, but we have stderr output, so take it
+                    }
+                } else {
+                    throw new TimeoutException("No stdout or stderr was available. The timeout period was exceeded.");
+                }
+            }
+        } catch (TimeoutException e) {
+            // we didn't get any stderr, but thats ok since we got stdout
+        } catch (InterruptedException e) {
+            throw new GATKException("InterruptedException retrieving stderr", e);
+        } catch (ExecutionException e) {
+            throw new GATKException("ExecutionException retrieving stderr", e);
+        }
+
+        //log the output, and restart the listeners for next time
         processJournal.writeInbound(stdout, stderr);
+        startListeners();
 
         return new ProcessOutput(0, stdout, stderr);
     }
 
     /**
-     * Create a temporary FIFO suitable for sending output to the remote process. This only  lives for the lifetime
-     * of the controller.
+     * Create a temporary FIFO suitable for sending output to the remote process. The FIFO is only valid for the
+     * lifetime of the controller; the FIFO is destroyed when the controller is destroyed.
      *
      * @return a FIFO File
      */
     public File createFIFO() {
+        if (fifoTempDir != null || fifoFile != null) {
+            throw new IllegalArgumentException("Only one FIFO per controller is supported");
+        }
+
         fifoTempDir = Files.createTempDir();
         final String fifoTempFileName = String.format("%s/%s", fifoTempDir.getAbsolutePath(), "gatkStreamingController.fifo");
 
+        // create the FIFO by executing mkfifo via another ProcessController
         final ProcessSettings mkFIFOSettings = new ProcessSettings(new String[]{"mkfifo", fifoTempFileName});
         mkFIFOSettings.getStdoutSettings().setBufferSize(-1);
         mkFIFOSettings.setRedirectErrorStream(true);
-
-        // use a one-shot controller to create the FIFO
         final ProcessController mkFIFOController = new ProcessController();
         final ProcessOutput result = mkFIFOController.exec(mkFIFOSettings);
-        int exitValue = result.getExitValue();
+        final int exitValue = result.getExitValue();
 
         fifoFile = new File(fifoTempFileName);
         if (exitValue != 0) {
-            throw new RuntimeException(String.format("Failure creating FIFO (%s) got exit code (%d)", fifoTempFileName, exitValue));
+            throw new GATKException(String.format("Failure creating FIFO (%s) got exit code (%d)", fifoTempFileName, exitValue));
         } else if (!fifoFile.exists()) {
-            throw new RuntimeException(String.format("FIFO (%s) created but doesn't exist", fifoTempFileName));
+            throw new GATKException(String.format("FIFO (%s) created but doesn't exist", fifoTempFileName));
         } else if (!fifoFile.canWrite()) {
-            throw new RuntimeException(String.format("FIFO (%s) created isn't writable", fifoTempFileName));
+            throw new GATKException(String.format("FIFO (%s) created isn't writable", fifoTempFileName));
         }
 
         return fifoFile;
@@ -284,7 +342,7 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     }
 
     /**
-     * Return true if either stdout or stderr ends with a synchronizationPoint
+     * Return true if either stdout or stderr ends with a synchronization string
      */
     private boolean scanForSynchronizationPoint(final ProcessOutput processOutput, final String synchronizationString) {
         final StreamOutput stdOut = processOutput.getStdout();
@@ -305,19 +363,26 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
     }
 
     /**
-     * Notify the output listener thread(s) to start listening for output
+     * Submit a task to start listening for output
      */
-    private void registerOutputListeners() {
-        // Notify the background threads to start capturing.
-        synchronized (toCapture) {
-            toCapture.put(ProcessStream.Stdout,
-                    new CapturedStreamOutputSnapshot(settings.getStdoutSettings(), process.getInputStream(), System.out));
-            if (!settings.isRedirectErrorStream()) {
-                // don't waste a thread for stderr if it's redirected to stdout
-                toCapture.put(ProcessStream.Stderr,
-                        new CapturedStreamOutputSnapshot(settings.getStderrSettings(), process.getErrorStream(), System.err));
-            }
-            toCapture.notifyAll();
+    private void startListeners() {
+        // Submit runnable task to start capturing.
+        if (stdOutFuture == null) {
+            stdOutFuture = executorService.submit(
+                    new OutputCapture(
+                            new CapturedStreamOutputSnapshot(settings.getStdoutSettings(), process.getInputStream(), System.out),
+                            ProcessStream.Stdout,
+                            this.getClass().getSimpleName(),
+                            controllerId));
+        }
+        if (!settings.isRedirectErrorStream() && stdErrFuture == null) {
+            // don't waste a callable on stderr if its just going to be redirected to stdout
+            stdErrFuture = executorService.submit(
+                    new OutputCapture(
+                            new CapturedStreamOutputSnapshot(settings.getStderrSettings(), process.getErrorStream(), System.err),
+                            ProcessStream.Stderr,
+                            this.getClass().getSimpleName(),
+                            controllerId));
         }
     }
 
@@ -328,17 +393,21 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
      */
     @Override
     protected void tryDestroy() {
-        destroyed = true;
-        synchronized (toCapture) {
-            if (process != null) {
-                // terminate the app by closing the process' INPUT stream
-                IOUtils.closeQuietly(process.getOutputStream());
+        if (stdErrFuture != null && !stdErrFuture.isDone()) {
+            boolean isCancelled = stdErrFuture.cancel(true);
+            if (!isCancelled) {
+                logger.error("Failure cancelling stderr task");
             }
-            stdoutCapture.interrupt();
-            if (stderrCapture != null) {
-                stderrCapture.interrupt();
+        }
+        if (stdOutFuture != null && !stdOutFuture.isDone()) {
+            boolean isCancelled = stdOutFuture.cancel(true);
+            if (!isCancelled) {
+                logger.error("Failure cancelling stdout task");
             }
-            toCapture.notifyAll();
+        }
+        if (process != null) {
+            // terminate the app by closing the process' INPUT stream
+            IOUtils.closeQuietly(process.getOutputStream());
         }
     }
 
@@ -412,9 +481,9 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
         public void writeOutbound(final String line) {
             try {
                 if (journalingFileWriter != null) {
-                    journalingFileWriter.write("Sending: [[[");
+                    journalingFileWriter.write("Sending: [");
                     journalingFileWriter.write(line);
-                    journalingFileWriter.write("]]]\n\n");
+                    journalingFileWriter.write("]\n\n");
                     journalingFileWriter.flush();
                 }
             } catch (IOException e) {
@@ -427,17 +496,28 @@ public final class StreamingProcessController extends ProcessControllerBase<Capt
             if (journalingFileWriter != null) {
                 try {
                     if (stdout != null) {
-                        journalingFileWriter.write("Received from stdout: [[[");
+                        journalingFileWriter.write("Received from stdout: [");
                         journalingFileWriter.write(stdout.getBufferString());
-                        journalingFileWriter.write("]]]\n\n");
-                        journalingFileWriter.flush();
+                        journalingFileWriter.write("]\n");
                     }
                     if (stderr != null) {
-                        journalingFileWriter.write("Received from stderr: [[[");
+                        journalingFileWriter.write("Received from stderr: [");
                         journalingFileWriter.write(stderr.getBufferString());
-                        journalingFileWriter.write("]]]\n\n");
-                        journalingFileWriter.flush();
+                        journalingFileWriter.write("]\n");
                     }
+                    journalingFileWriter.write("\n");
+                    journalingFileWriter.flush();
+                } catch (IOException e) {
+                    throw new GATKException(String.format("Error writing to journaling file %s", journalingFile.getAbsolutePath()), e);
+                }
+            }
+        }
+
+        public void writeLogMessage(final String message) {
+            if (journalingFileWriter != null) {
+                try {
+                    journalingFileWriter.write(message);
+                    journalingFileWriter.flush();
                 } catch (IOException e) {
                     throw new GATKException(String.format("Error writing to journaling file %s", journalingFile.getAbsolutePath()), e);
                 }

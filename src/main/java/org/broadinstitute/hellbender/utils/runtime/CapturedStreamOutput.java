@@ -93,9 +93,10 @@ public class CapturedStreamOutput extends StreamOutput {
      * @throws IOException When unable to read or write.
      */
     public boolean read() throws IOException {
+        int readCount = 0;
         try {
+            // read until eof
             byte[] buf = new byte[STREAM_BLOCK_TRANSFER_SIZE];
-            int readCount;
             while ((readCount = processStream.read(buf)) >= 0)
                 for (OutputStream outputStream : this.outputStreams.values()) {
                     outputStream.write(buf, 0, readCount);

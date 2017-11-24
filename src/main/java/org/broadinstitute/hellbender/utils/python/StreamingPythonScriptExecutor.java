@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hellbender.utils.runtime.*;
+import org.broadinstitute.hellbender.exceptions.UserException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,25 +12,33 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-// TODO: Should we have a mode that just discards stdout (after synchronizing on prompt), and only retrieves stderr ?
-
 /**
- * Python executor used to interact with a Python process. The lifecycle of an executor is typically:
+ * Python executor used to interact with a keep-alive Python process. The lifecycle of an executor is typically:
  *
- *  start an executor
- *  create a fifo
- *  execute Python code to open the fifo for reading
- *  execute local code to eopen the fifo for writing
- *  send/receive one inpt/output one or more times
- *  terminate the executor
+ *  - construct the executor
+ *  - start the remote process ({@link #start}) and synchronize on the prompt ({@link #getAccumulatedOutput()}
+ *  - create a fifo {@link #getFIFOForWrite}
+ *  - execute asynchronous Python code {@link #sendAsynchronousCommand} to open the fifo for reading
+ *  - execute local java code to open the fifo for writing
+ *  - synchronize on the prompt resulting from the python code opening the fifo {@link #getAccumulatedOutput}
+ *  - send/receive input one or more times (write/flush to the fifo)/synchronize on the prompt ({@link #getAccumulatedOutput) output
+ *  - close the fifo locally
+ *  - terminate the executor {@link #terminate}
  *
  * Guidelines for writing GATK tools that use Python interactively:
  *
- *   Program correctness should not rely on anything written by Python to stdout/stderr output. All data
- *   should be transferred through a FIFO or file.
- *   Prefer single line commands, always terminated with newlines (otherwise python will block)
- *   Terminate commands with newline!!
- *   Try not to be chatty
+ *   - Program correctness should not rely on consumption of anything written by Python to stdout/stderr other than
+ *     the use the prompt for synchronization via {@link #getAccumulatedOutput}. All data should be transferred through
+ *     a FIFO or file.
+ *   - Always synchronize after starting the Python process (through {@link #start}, followed by
+ *     {@link #getAccumulatedOutput}).
+ *   - Python code should write errors to stderr.
+ *   - The FIFO should always be flushed before executing Python code that reads from it. Failure to do so can result
+ *     in the Python process being blocked.
+ *   - Prefer single line commands that run a script, vs. multi-line Python code embedded in Java
+ *   - Always terminated with newlines (otherwise Python will block)
+ *   - Terminate commands with a newline.
+ *   - Try not to be chatty (maximize use of the fifo buffer by writing to it in batches before reading from Python)
  *
  * NOTE: Python implementations are unreliable about honoring standard I/O stream redirection. Its not safe to
  * try to synchronize based on anything written to standard I/O streams, since Python sometimes prints the
@@ -50,7 +59,7 @@ public class StreamingPythonScriptExecutor extends PythonExecutorBase {
     final public static String PYTHON_PROMPT = ">>> ";
 
     /**
-     * The start method must be called to actully start the remote executable.
+     * The start method must be called to actually start the remote executable.
      *
      * @param ensureExecutableExists throw if the python executable cannot be located
      */
@@ -59,7 +68,7 @@ public class StreamingPythonScriptExecutor extends PythonExecutorBase {
     }
 
     /**
-     * The start method must be called to actully start the remote executable.
+     * The start method must be called to actually start the remote executable.
      *
      * @param pythonExecutableName name of the python executable to start
      * @param ensureExecutableExists throw if the python executable cannot be found
@@ -83,7 +92,7 @@ public class StreamingPythonScriptExecutor extends PythonExecutorBase {
      *
      * @param pythonProcessArgs args to be passed to the python process
      * @param enableJournaling true to enable Journaling, which records all interprocess IO to a file. This is
-     *                         expensive and should only be used for debugging.
+     *                         expensive and should only be used for debugging purposes.
      * @return true if the process is successfully started
      */
     public boolean start(final List<String> pythonProcessArgs, final boolean enableJournaling) {
@@ -120,12 +129,15 @@ public class StreamingPythonScriptExecutor extends PythonExecutorBase {
     /**
      * Send a command to Python, and wait for a response prompt, returning all accumulated output
      * since the last call to either <link #sendSynchronousCommand/> or <line #getAccumulatedOutput/>
+     * This is a blocking call, and should be used for commands that execute quickly and synchronously.
+     * If no output is received from the remote process during the timeout period, an exception will be thrown.
      *
      * The caller is required to terminate commands with a newline. The executor doesn't do this
      * automatically since doing so would alter the number of prompts issued by the remote process.
      *
-     * @param line data to be sent to he remote process
+     * @param line data to be sent to the remote process
      * @return ProcessOutput
+     * @throws UserException if a timeout occurs
      */
     public ProcessOutput sendSynchronousCommand(final String line) {
         if (!line.endsWith(NL)) {
@@ -138,10 +150,15 @@ public class StreamingPythonScriptExecutor extends PythonExecutorBase {
     }
 
     /**
-     * Send a command to the remote prorcess without waiting for a response.
+     * Send a command to the remote process without waiting for a response. This method should only
+     * be used for responses that will block the remote process.
+     *
+     * NOTE: Before executing further synchronous statements after calling this method, getAccumulatedOutput
+     * should be called to enforce a synchronization point.
      *
      * The caller is required to terminate commands with a newline. The executor doesn't do this
-     * automatically since it can alter the number of prompts issued by the remote process.
+     * automatically since it can alter the number of prompts, and thus synchronization points, issued
+     * by the remote process.
      *
      * @param line data to send to the remote process
      */
@@ -162,36 +179,59 @@ public class StreamingPythonScriptExecutor extends PythonExecutorBase {
     }
 
     /**
-     * Return all data accumulated since the last call to getAccumulatedOutput (either directly, or indirectly
-     * through <link #sendSynchronousCommand/>. If no data has been sent from the process, this call blocks,
-     * waiting for data, or the timeout to be reached.
+     * Return all data accumulated since the last call to {@link #getAccumulatedOutput} (either directly, or
+     * indirectly through {@link #sendSynchronousCommand}, collected until an output prompt is detected.
      *
-     * @return ProcessOutput
+     * Note that the output returned is somewhat non-deterministic, in that the only guaranty is that a prompt
+     * was detected on either stdout or stderr. It is possible for the remote process to produce the prompt on
+     * one stream (stderr or stdout), and additional output on the other; this method may detect the prompt before
+     * detecting the additional output on the other stream. Such output will be retained, and returned as part of
+     * the payload the next time output is retrieved.
+     *
+     * For this reason, program correctness should not rely on consuming data written by Python to standard streams.
+     *
+     * This should only be used for short, synchronous commands that produce output quickly. If no data has been
+     * sent from the process, this call blocks waiting for data, or the timeout (default 5 seconds) to be reached.
+     *
+     * Longer-running, blocking commands can be executed using {@link #sendAsynchronousCommand}, in combination
+     * with {@link #isOutputAvailable}.
+     *
+     * @return ProcessOutput containing all accumulated output from stdout/stderr
+     * @throws UserException if a timeout occurs waiting for output
+     * @throws PythonScriptExecutorException if a traceback is detected in the outpu
      */
     public ProcessOutput getAccumulatedOutput() {
         try {
-            return spController.getProcessOutputByPrompt();
+            final ProcessOutput po = spController.getProcessOutputByPrompt();
+            final StreamOutput stdErr = po.getStderr();
+            if (stdErr != null) {
+                final String stdErrText = stdErr.getBufferString();
+                if (stdErrText != null && stdErrText.contains("Traceback")) {
+                    throw new PythonScriptExecutorException("Traceback detected: " + stdErrText);
+                }
+            }
+            return po;
         } catch (TimeoutException e) {
-            throw new RuntimeException(e);
+            throw new UserException("A timeout ocurred waiting for output from the remote Python command.", e);
         }
     }
 
     /**
      * Terminate the remote process, closing the fifo if any.
      *
-     * @return true if the process has been successfuly terminated
+     * @return true if the process has been successfully terminated
      */
     public boolean terminate() {
         return spController.terminate();
     }
 
     /**
-     * Obtain a FIFO to be sued to transfer data to Python. The FIFO returned by this method will only live
-     * as long as the executor lives.
+     * Obtain a temporary FIFO to be used to transfer data to Python.The FIFO is only valid for the
+     * lifetime of the executor; it is destroyed when the executor is terminated.
      *
      * NOTE: Since opening a FIFO for write blocks until it is opened for read, the caller is responsible
-     * for ensuring that a Python command to open the FIFO has been executed before opening it for write.
-     * For this reason, the opening of the FIFO is left to the caller.
+     * for ensuring that a Python command to open the FIFO has been executed (asynchronously) before executing
+     * code to open it for write. For this reason, the opening of the FIFO is left to the caller.
      *
      * @return
      */

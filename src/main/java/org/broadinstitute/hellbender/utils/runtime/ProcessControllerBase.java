@@ -9,8 +9,12 @@ import org.broadinstitute.hellbender.utils.Utils;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-public abstract class ProcessControllerBase<CAPTURE_POLICY extends CapturedStreamOutput> implements Thread.UncaughtExceptionHandler
+public abstract class ProcessControllerBase<CAPTURE_POLICY extends CapturedStreamOutput>
 {
     private static final Logger logger = LogManager.getLogger(ProcessControllerBase.class);
 
@@ -19,25 +23,19 @@ public abstract class ProcessControllerBase<CAPTURE_POLICY extends CapturedStrea
     // Tracks running controllers.
     protected static final Set<ProcessControllerBase<?>> running = Collections.synchronizedSet(new LinkedHashSet<>());
 
-    // Threads that capture stdout and stderr
-    protected Thread stdoutCapture;
-    protected Thread stderrCapture;
-
-    private final static String threadGroupName = "gatkProcessControllers";
-    protected final static ThreadGroup controllerThreadGroup = new ThreadGroup(threadGroupName);
+    // We can't use a fixed thread pool size, since we could run out if multiple controllers were to make blocking calls
+    final static protected ExecutorService executorService = Executors.newCachedThreadPool();
 
     // Tracks the running process associated with this controller.
     protected Process process;
 
+    // The capture policy dictates the termination condition when reading output data from the remote process,
+    // either read everything (for ProcessController) or read while available (StreamingProcessController).
+    protected Future<CAPTURE_POLICY> stdOutFuture;
+    protected Future<CAPTURE_POLICY> stdErrFuture;
+
     // When a caller destroys a controller a new thread local version will be created
     protected boolean destroyed = false;
-
-    // Holds the stdout and stderr sent to the background capture threads
-    protected final Map<ProcessStream, CAPTURE_POLICY> toCapture = new EnumMap<>(ProcessStream.class);
-
-    // Holds the results of the capture from the background capture threads.
-    // May be the content via toCapture or an StreamOutput.EMPTY if the capture was interrupted.
-    protected final Map<ProcessStream, StreamOutput> fromCapture = new EnumMap<>(ProcessStream.class);
 
     // Useful for debugging if background threads have shut down correctly
     private static int nextControllerId = 0;
@@ -82,9 +80,7 @@ public abstract class ProcessControllerBase<CAPTURE_POLICY extends CapturedStrea
 
         // Start the process running.
         try {
-            synchronized (toCapture) {
-                process = builder.start();
-            }
+            process = builder.start();
             running.add(this);
         } catch (IOException e) {
             final String message = String.format("Unable to start command: %s\nReason: %s",
@@ -118,16 +114,12 @@ public abstract class ProcessControllerBase<CAPTURE_POLICY extends CapturedStrea
         super.finalize();
     }
 
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        if (t.getThreadGroup().getName().equals(threadGroupName)) {
-            System.err.println(String.format(
-                    "Uncaught exception handler called on thread %s for thread %s", Thread.currentThread().getName(), t.getName()));
-        }
-    }
-
-    protected class OutputCapture extends Thread {
+    protected class OutputCapture implements Callable<CAPTURE_POLICY> {
         private final ProcessStream key;
+
+        //TODO: use controllerContextName
+        private final String controllerContextName;
+        private final CAPTURE_POLICY capturedProcessStream;
 
         /**
          * Reads in the output of a stream on a background thread to keep the output pipe from backing up and freezing the called process.
@@ -135,54 +127,30 @@ public abstract class ProcessControllerBase<CAPTURE_POLICY extends CapturedStrea
          * @param key The stdout or stderr key for this output capture.
          * @param controllerId Unique id of the controller.
          */
-        public OutputCapture(final ProcessControllerBase<?> b, final ThreadGroup threadGroup, final String className, ProcessStream key, int controllerId) {
-            super(threadGroup,
-                    String.format("OutputCapture-%s-%d-%s-%s-%d", className, controllerId, key.name().toLowerCase(),
-                    Thread.currentThread().getName(), Thread.currentThread().getId()));
+        public OutputCapture(
+                final CAPTURE_POLICY capturedProcessStream,
+                ProcessStream key,
+                final String className,
+                int controllerId) {
             this.key = key;
-            setDaemon(true);
-            this.setUncaughtExceptionHandler(b);
+            this.capturedProcessStream = capturedProcessStream;
+            this.controllerContextName = String.format(
+                    "OutputCapture-%s-%d-%s", className, controllerId, key.name().toLowerCase()
+            );
         }
 
         /**
          * Runs the capture.
          */
         @Override
-        public void run() {
-            while (!destroyed && !isInterrupted()) {
-                StreamOutput processStream = StreamOutput.EMPTY;
-                try {
-                    // Wait for a new input stream to be passed from this process controller.
-                    CAPTURE_POLICY capturedProcessStream = null;
-                    while (!destroyed && !isInterrupted() && capturedProcessStream == null) {
-                        synchronized (toCapture) {
-                            if (toCapture.containsKey(key)) {
-                                capturedProcessStream = toCapture.remove(key);
-                            } else {
-                                toCapture.wait();
-                            }
-                        }
-                    }
-
-                    if (!destroyed && !isInterrupted() ) {
-                        // Read in the input stream
-                        boolean eof = capturedProcessStream.read();
-                        //TODO: handle EOF on closed stream
-                        processStream = capturedProcessStream;
-                    }
-                } catch (InterruptedException e) {
-                    logger.info("OutputCapture interrupted, exiting");
-                    break;
-                } catch (IOException e) {
-                    logger.error("Error reading process output", e);
-                } finally {
-                    // Send the output back to the process controller.
-                    synchronized (fromCapture) {
-                        fromCapture.put(key, processStream);
-                        fromCapture.notify();
-                    }
-                }
+        public CAPTURE_POLICY call() {
+            try {
+                // Delegate to the capture stream and let it's policy dictate how much to read
+                capturedProcessStream.read();
+            } catch (IOException e) {
+                logger.error("Error reading process output", e);
             }
+            return capturedProcessStream;
         }
     }
 }

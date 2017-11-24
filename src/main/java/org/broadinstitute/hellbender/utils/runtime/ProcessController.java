@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Facade to Runtime.exec() and java.lang.Process.  Handles
@@ -28,14 +29,6 @@ import java.util.*;
  */
 public final class ProcessController extends ProcessControllerBase<CapturedStreamOutput> {
     private static final Logger logger = LogManager.getLogger(ProcessController.class);
-
-    public ProcessController() {
-        // Start the background threads for this controller.
-        stdoutCapture = new OutputCapture(this, controllerThreadGroup, this.getClass().getSimpleName(), ProcessStream.Stdout, controllerId);
-        stderrCapture = new OutputCapture(this, controllerThreadGroup, this.getClass().getSimpleName(), ProcessStream.Stderr, controllerId);
-        stdoutCapture.start();
-        stderrCapture.start();
-    }
 
     /**
      * Returns a thread local ProcessController.
@@ -80,21 +73,25 @@ public final class ProcessController extends ProcessControllerBase<CapturedStrea
      * @return The output of the command.
      */
     public ProcessOutput exec(ProcessSettings settings) {
-        StreamOutput stdout = null;
-        StreamOutput stderr = null;
+        StreamOutput stdout;
+        StreamOutput stderr;
         int exitCode;
 
         launchProcess(settings);
 
         try {
-            // Notify the background threads to start capturing.
-            synchronized (toCapture) {
-                toCapture.put(ProcessStream.Stdout,
-                        new CapturedStreamOutput(settings.getStdoutSettings(), process.getInputStream(), System.out));
-                toCapture.put(ProcessStream.Stderr,
-                        new CapturedStreamOutput(settings.getStderrSettings(), process.getErrorStream(), System.err));
-                toCapture.notifyAll();
-            }
+            stdOutFuture = executorService.submit(
+                    new OutputCapture(
+                            new CapturedStreamOutput(settings.getStdoutSettings(), process.getInputStream(), System.out),
+                            ProcessStream.Stdout,
+                            this.getClass().getSimpleName(),
+                            controllerId));
+            stdErrFuture = executorService.submit(
+                    new OutputCapture(
+                            new CapturedStreamOutput(settings.getStderrSettings(), process.getErrorStream(), System.err),
+                            ProcessStream.Stderr,
+                            this.getClass().getSimpleName(),
+                            controllerId));
 
             // Write stdin content
             InputStreamSettings stdinSettings = settings.getStdinSettings();
@@ -138,45 +135,24 @@ public final class ProcessController extends ProcessControllerBase<CapturedStrea
             try {
                 process.getOutputStream().close();
                 process.waitFor();
+                stdout = stdOutFuture.get();
+                stdOutFuture = null;
+                stderr = stdErrFuture.get();
+                stdErrFuture = null;
+            } catch (ExecutionException e) {
+                throw new GATKException("Execution exception during process output retrieval", e);
             } catch (IOException e) {
                 throw new GATKException("Unable to close stdin on command: " + settings.getCommandString(), e);
             } catch (InterruptedException e) {
                 throw new GATKException("Process interrupted", e);
-            } finally {
-                while (!destroyed && stdout == null || stderr == null) {
-                    synchronized (fromCapture) {
-                        if (fromCapture.containsKey(ProcessStream.Stdout))
-                            stdout = fromCapture.remove(ProcessStream.Stdout);
-                        if (fromCapture.containsKey(ProcessStream.Stderr))
-                            stderr = fromCapture.remove(ProcessStream.Stderr);
-                        try {
-                            if (stdout == null || stderr == null)
-                                fromCapture.wait();
-                        } catch (InterruptedException e) {
-                            // Log the error, ignore the interrupt and wait patiently
-                            // for the OutputCaptures to (via finally) return their
-                            // stdout and stderr.
-                            logger.error(e);
-                        }
-                    }
-                }
-
-                if (destroyed) {
-                    if (stdout == null)
-                        stdout = StreamOutput.EMPTY;
-                    if (stderr == null)
-                        stderr = StreamOutput.EMPTY;
-                }
             }
         } finally {
-            synchronized (toCapture) {
-                exitCode = process.exitValue();
-                process = null;
-            }
+            exitCode = process.exitValue();
+            process = null;
             running.remove(this);
         }
-
         return new ProcessOutput(exitCode, stdout, stderr);
+
     }
 
     /**
@@ -188,17 +164,23 @@ public final class ProcessController extends ProcessControllerBase<CapturedStrea
     @Override
     protected void tryDestroy() {
         destroyed = true;
-        synchronized (toCapture) {
-            if (process != null) {
-                process.destroy();
-                IOUtils.closeQuietly(process.getInputStream());
-                IOUtils.closeQuietly(process.getErrorStream());
+
+        if (stdErrFuture != null) {
+            boolean isCancelled = stdErrFuture.cancel(true);
+            if (!isCancelled) {
+                logger.error("Failure cancelling stderr task");
             }
-            stdoutCapture.interrupt();
-            if (stderrCapture != null) {
-                stderrCapture.interrupt();
+        }
+        if (stdOutFuture != null) {
+            boolean isCancelled = stdOutFuture.cancel(true);
+            if (!isCancelled) {
+                logger.error("Failure cancelling stdout task");
             }
-            toCapture.notifyAll();
+        }
+        if (process != null) {
+            process.destroy();
+            IOUtils.closeQuietly(process.getInputStream());
+            IOUtils.closeQuietly(process.getErrorStream());
         }
     }
 

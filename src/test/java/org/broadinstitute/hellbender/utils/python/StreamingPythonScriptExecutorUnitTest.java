@@ -6,6 +6,7 @@ import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.utils.runtime.ProcessOutput;
 import org.broadinstitute.hellbender.utils.runtime.StreamingPythonTestUtils;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -45,7 +46,7 @@ public class StreamingPythonScriptExecutorUnitTest extends GATKBaseTest {
 
     @Test(dataProvider="supportedPythonVersions", groups = {"PYTHON"}, dependsOnMethods = "testPythonExists", timeOut=10000)
     public void testExecuteCommand(final PythonScriptExecutor.PythonExecutableName executableName) throws IOException {
-        // crete a temporary output file
+        // create a temporary output file
         final File tempFile = createTempFile("pythonExecuteCommandTest", "txt");
         final String WRITE_FILE_SCRIPT =
                 String.format(
@@ -175,10 +176,10 @@ public class StreamingPythonScriptExecutorUnitTest extends GATKBaseTest {
     }
 
     @Test(dataProvider="supportedPythonVersions",
-            timeOut=10000,
-            invocationCount = 20,
-            groups = {"PYTHON"},
-            dependsOnMethods = "testPythonExists")
+        timeOut=10000,
+        invocationCount = 20,
+        groups = {"PYTHON"},
+        dependsOnMethods = "testPythonExists")
     public void testMultipleFIFORoundTrips(final PythonScriptExecutor.PythonExecutableName executableName) throws IOException {
         // Python script statements to open, read, and write to and from the FIFO and temporary files
         final String PYTHON_INITIALIZE_COUNT    = "count = 0" + NL;
@@ -197,27 +198,24 @@ public class StreamingPythonScriptExecutorUnitTest extends GATKBaseTest {
         final StreamingPythonScriptExecutor streamingPythonExecutor =
                 new StreamingPythonScriptExecutor(executableName, true);
         Assert.assertNotNull(streamingPythonExecutor);
+        // ignore/drop the startup banner
         Assert.assertTrue(streamingPythonExecutor.start(Collections.emptyList()));
 
         // create a temporary file
         final File tempFile = createTempFile("pythonRoundTripTest", "txt");
 
         try {
-            // synchronize on a prompt, then consume the Python startup banner, but don't validate the contents
-            streamingPythonExecutor.getAccumulatedOutput();
-
             // initialize a counter in Python to keep track of # of round trips
-            streamingPythonExecutor.sendAsynchronousCommand(PYTHON_INITIALIZE_COUNT);
-            ProcessOutput response = streamingPythonExecutor.getAccumulatedOutput();
+            ProcessOutput response = streamingPythonExecutor.sendSynchronousCommand(PYTHON_INITIALIZE_COUNT);
             StreamingPythonTestUtils.assertPythonPrompt(response, StreamingPythonScriptExecutor.PYTHON_PROMPT);
 
             // ask python to open the temp file
-            streamingPythonExecutor.sendAsynchronousCommand(String.format(PYTHON_OPEN_TEMP_FILE, tempFile.getAbsolutePath()));
-            response = streamingPythonExecutor.getAccumulatedOutput();
+            response = streamingPythonExecutor.sendSynchronousCommand(String.format(PYTHON_OPEN_TEMP_FILE, tempFile.getAbsolutePath()));
             StreamingPythonTestUtils.assertPythonPrompt(response, StreamingPythonScriptExecutor.PYTHON_PROMPT);
 
             // obtain a FIFO and ask Python to open it; the Python process will block waiting for a writer
-            // to open the FIFO, so we don't request output until we FIFOfor writing
+            // to open the FIFO, so send the command asynchronously, and don't request output until after we
+            // open FIFO for writing
             final File fifoFile = streamingPythonExecutor.getFIFOForWrite();
             streamingPythonExecutor.sendAsynchronousCommand(String.format(PYTHON_OPEN_FIFO, fifoFile.getAbsolutePath()));
 
@@ -280,6 +278,27 @@ public class StreamingPythonScriptExecutorUnitTest extends GATKBaseTest {
              final BufferedLineReader br = new BufferedLineReader(fis)) {
             linesWrittenToFIFO.forEach(expectedLine -> Assert.assertEquals(br.readLine() + NL, expectedLine));
         }
+    }
+
+    @Test(dataProvider="supportedPythonVersions", groups = {"PYTHON"}, expectedExceptions = PythonScriptExecutorException.class)
+    public void testPythonAssert(final PythonScriptExecutor.PythonExecutableName executableName) {
+        final StreamingPythonScriptExecutor streamingPythonExecutor =
+                new StreamingPythonScriptExecutor(executableName,true);
+        Assert.assertNotNull(streamingPythonExecutor);
+        Assert.assertTrue(streamingPythonExecutor.start(Collections.emptyList()));
+        streamingPythonExecutor.getAccumulatedOutput();
+
+        try {
+            ProcessOutput po = streamingPythonExecutor.sendSynchronousCommand("assert 0" + NL);
+
+            Assert.assertNotNull(po.getStderr());
+            Assert.assertNotNull(po.getStderr().getBufferString());
+        }
+        finally {
+            Assert.assertEquals(streamingPythonExecutor.terminate(),true);
+            Assert.assertFalse(streamingPythonExecutor.getProcess().isAlive());
+        }
+
     }
 
 }

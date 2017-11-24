@@ -23,10 +23,11 @@ import java.util.Collections;
  * <li>Opens a FIFO for writing.</li>
  * <li>Writes a string of attributes for each read to the FIFO.</li>
  * <li>Uses Python to read each attribute line from the FIFO, and write it to the output file.</li>
- * <li>NOTE: For purposes of illustration, this tool flushes the FIFO after each write, and instructs Python to
- * synchronously transfer each item from the read end of the FIFO to the output file immediately after its
- * written. In reality, this is probably inefficient data sets. A production would probably aggregate summary
- * data and transfer it in batches.</li>
+ * <li>NOTE: For purposes of illustration, this tool writes summary data for each read, flushes the FIFO after,
+ * and instructs Python to synchronously transfer each item from the read end of the FIFO to the output file
+ * immediately after its written. In reality, this is inefficient. A production tool would aggregate
+ * summary data and transfer it in batches, only writing, flushing, and reading in batches, rather than
+ * on every apply call during traversal.</li>
  * </ol>
  */
 @CommandLineProgramProperties(
@@ -53,13 +54,13 @@ public class ExampleStreamingPythonExecutor extends ReadWalker {
     public void onTraversalStart() {
 
         // Start the Python process, and get a FIFO from the executor to use to send data to Python. The lifetime
-        // of the FIFO is managed by the executor; the FIFO will be destroyed when the executor is destroyed.
+        // of the FIFO is managed by the executor; the FIFO will be destroyed when the executor is terminated.
         pythonExecutor.start(Collections.emptyList());
         final File fifoFile = pythonExecutor.getFIFOForWrite();
 
         // Open the FIFO for writing. Opening a FIFO for read or write will block until there is reader/writer
-        // on the other end, so before we open it, send an ASYNCHRONOUS command (one that doesn't wait for a
-        // response) to the Python process to open the FIFO for reading. The Python process will then block until
+        // on the other end, so before we open it, send an ASYNCHRONOUS command, that doesn't wait for a
+        // response, to the Python process to open the FIFO for reading. The Python process will then block until
         // we open the FIFO. We can then call getAccumulatedOutput.
         pythonExecutor.sendAsynchronousCommand(String.format("fifoFile = open('%s', 'r')" + NL, fifoFile.getAbsolutePath()));
         try {
