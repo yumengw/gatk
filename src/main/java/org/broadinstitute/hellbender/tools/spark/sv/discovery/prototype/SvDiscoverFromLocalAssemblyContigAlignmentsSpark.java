@@ -131,26 +131,25 @@ public final class SvDiscoverFromLocalAssemblyContigAlignmentsSpark extends GATK
 
     //==================================================================================================================
 
-    // TODO: 11/21/17 insertion mappings are dropped here in this implementation, must get them back for ticket #3647
     private void dispatchJobs(final String sampleId,
                               final EnumMap<RawTypes, JavaRDD<AssemblyContigWithFineTunedAlignments>> contigsByPossibleRawTypes,
                               final Broadcast<ReferenceMultiSource> referenceMultiSourceBroadcast,
                               final Broadcast<SAMSequenceDictionary> broadcastSequenceDictionary) {
 
         new InsDelVariantDetector()
-                .inferSvAndWriteVCF(contigsByPossibleRawTypes.get(RawTypes.InsDel).map(decoratedTig -> decoratedTig.contig),
-                        outputDir+"/"+ RawTypes.InsDel.name()+".vcf",
-                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger, sampleId);
+                .inferSvAndWriteVCF(outputDir+"/"+RawTypes.InsDel.name()+".vcf", sampleId,
+                        contigsByPossibleRawTypes.get(RawTypes.InsDel),
+                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger);
 
         new SimpleStrandSwitchVariantDetector()
-                .inferSvAndWriteVCF(contigsByPossibleRawTypes.get(RawTypes.IntraChrStrandSwitch).map(decoratedTig -> decoratedTig.contig),
-                        outputDir+"/"+ RawTypes.IntraChrStrandSwitch.name()+".vcf",
-                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger, sampleId);
+                .inferSvAndWriteVCF(outputDir+"/"+RawTypes.IntraChrStrandSwitch.name()+".vcf", sampleId,
+                        contigsByPossibleRawTypes.get(RawTypes.IntraChrStrandSwitch),
+                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger);
 
         new SuspectedTransLocDetector()
-                .inferSvAndWriteVCF(contigsByPossibleRawTypes.get(RawTypes.MappedInsertionBkpt).map(decoratedTig -> decoratedTig.contig),
-                        outputDir+"/"+ RawTypes.MappedInsertionBkpt.name()+".vcf",
-                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger, sampleId);
+                .inferSvAndWriteVCF(outputDir+"/"+ RawTypes.MappedInsertionBkpt.name()+".vcf", sampleId,
+                        contigsByPossibleRawTypes.get(RawTypes.MappedInsertionBkpt),
+                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger);
     }
 
     //==================================================================================================================
