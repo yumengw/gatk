@@ -7,6 +7,7 @@ import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -15,6 +16,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static java.lang.Thread.sleep;
 
 public final class ProcessControllerUnitTest extends GATKBaseTest {
     private static final String NL = String.format("%n");
@@ -125,17 +128,16 @@ public final class ProcessControllerUnitTest extends GATKBaseTest {
 
     @Test
     public void testWriteStdOut() {
-        ProcessSettings job = new ProcessSettings(new String[] {"echo", "Testing to stdout"});
-        // Not going to call the System.setOut() for now. Just running a basic visual test.
+        final String testInput = "Testing to stdout";
+        final ProcessSettings job = new ProcessSettings(new String[] {"echo", testInput});
         job.getStdoutSettings().printStandard(true);
+        job.getStdoutSettings().setBufferSize(-1);
         job.setRedirectErrorStream(true);
 
-//        System.out.println("testWriteStdOut: Writing two lines to std out...");
-        ProcessController controller = new ProcessController();
-        controller.exec(job);
-        job.setCommand(new String[]{"cat", "non_existent_file"});
-        controller.exec(job);
-//        System.out.println("testWriteStdOut: ...two lines should have been printed to std out");
+        final ProcessController controller = new ProcessController();
+        ProcessOutput processOutput = controller.exec(job);
+        Assert.assertEquals(processOutput.getExitValue(), 0);
+        Assert.assertEquals(processOutput.getStdout().getBufferString(), testInput + NL);
     }
 
     @Test
