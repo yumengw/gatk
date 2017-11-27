@@ -656,7 +656,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                 //  1) no more segments to explore
                 //  2) the next segment IS NOT contained in the current alignment's ref span
                 if ( currentJumpGapSize > 0 && !jumpIsLast){
-                    descriptions.add(ReferenceSegmentsAndEventDescription.UNMAPPED_INSERTION);
+                    descriptions.add(ReferenceSegmentsAndEventDescription.UNMAPPED_INSERTION + "-" + currentJumpGapSize);
                 }
             }
 
