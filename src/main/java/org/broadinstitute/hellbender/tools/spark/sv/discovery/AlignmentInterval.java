@@ -18,6 +18,7 @@ import org.broadinstitute.hellbender.utils.param.ParamUtils;
 import org.broadinstitute.hellbender.utils.read.CigarUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
+import scala.Tuple2;
 
 import java.util.*;
 
@@ -561,5 +562,46 @@ public final class AlignmentInterval {
         } else {
             return new Cigar(elements);
         }
+    }
+
+    /**
+     * @return  inclusive, 1-based boundaries on read to which this AlignmentInterval belongs,
+     *          if the given {@code otherRefSpan} overlaps the ref span of this alignment;
+     *          otherwise return a tuple 2 of (-1, -1)
+     */
+    public Tuple2<Integer, Integer> overlapBoundariesOnRead(final SimpleInterval otherRefSpan) {
+        final int start, end;
+        if ( ! Utils.nonNull(otherRefSpan).overlaps(referenceSpan) ) {
+            start = end = -1;
+        } else if ( otherRefSpan.contains(referenceSpan) ) {
+            start = startInAssembledContig;
+            end = endInAssembledContig;
+        } else {
+            final CigarElement firstCigarElement = cigarAlong5to3DirectionOfContig.getFirstCigarElement();
+            final int hardClipOffset = firstCigarElement.getOperator().equals(CigarOperator.H) ? firstCigarElement.getLength() : 0;
+            final int distOnRefForStart;
+            final int distOnRefForEnd;
+            if (forwardStrand) {
+                distOnRefForStart = Math.max(0, otherRefSpan.getStart() - referenceSpan.getStart());
+                distOnRefForEnd = Math.max(0, referenceSpan.getEnd() - otherRefSpan.getEnd());
+            } else {
+                distOnRefForStart = Math.max(0, referenceSpan.getEnd() - otherRefSpan.getEnd());
+                distOnRefForEnd = Math.max(0, otherRefSpan.getStart() - referenceSpan.getStart());
+            }
+            int walkDistOnReadFromStart = 0;
+            if ( distOnRefForStart != 0 ) {
+                final int startPosOnRead = startInAssembledContig - hardClipOffset; // utility method requests no hard clipped counted
+                walkDistOnReadFromStart = SvCigarUtils.computeAssociatedDistOnRead(cigarAlong5to3DirectionOfContig, startPosOnRead, distOnRefForStart, false);
+            }
+            int walkDistOnReadFromEnd = 0;
+            if ( distOnRefForEnd != 0 ) {
+                final int startPosOnRead = endInAssembledContig - hardClipOffset; // utility method requests no hard clipped counted
+                walkDistOnReadFromEnd = SvCigarUtils.computeAssociatedDistOnRead(cigarAlong5to3DirectionOfContig, startPosOnRead, distOnRefForEnd, true);
+            }
+
+            start = startInAssembledContig + walkDistOnReadFromStart;
+            end = endInAssembledContig - walkDistOnReadFromEnd;
+        }
+        return new Tuple2<>(start, end);
     }
 }
