@@ -150,6 +150,11 @@ public final class SvDiscoverFromLocalAssemblyContigAlignmentsSpark extends GATK
                 .inferSvAndWriteVCF(outputDir+"/"+ RawTypes.MappedInsertionBkpt.name()+".vcf", sampleId,
                         contigsByPossibleRawTypes.get(RawTypes.MappedInsertionBkpt),
                         referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger);
+
+        new CpxVariantDetector()
+                .inferSvAndWriteVCF(outputDir+"/"+ RawTypes.Cpx.name()+".vcf", sampleId,
+                        contigsByPossibleRawTypes.get(RawTypes.Cpx),
+                        referenceMultiSourceBroadcast, broadcastSequenceDictionary, localLogger);
     }
 
     //==================================================================================================================
