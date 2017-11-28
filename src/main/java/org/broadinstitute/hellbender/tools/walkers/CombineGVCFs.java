@@ -34,35 +34,33 @@ import java.util.*;
  * Combine per-sample gVCF files produced by HaplotypeCaller into a multi-sample gVCF file
  *
  * <p>
- * CombineGVCFs is meant to be used for hierarchical merging of gVCFs that will eventually be input into GenotypeGVCFs.
- * One would use this tool when needing to genotype too large a number of individual gVCFs; One would first use
+ * CombineGVCFs is meant to be used for merging of GVCFs that will eventually be input into GenotypeGVCFs.
+ * One could use this tool when needing to genotype multiple individual GVCFs instead of GenomicsDBImport; one would first use
  * CombineGVCFs to combine them into a single GVCF and pass this into GenotypeGVCFs.</p>
  *
  * <h3>Input</h3>
  * <p>
- * Two or more Haplotype Caller gVCFs to combine.
+ * Two or more HaplotypeCaller GVCFs to combine.
  * </p>
  *
  * <h3>Output</h3>
  * <p>
- * A combined multisample gVCF.
+ * A combined multi-sample gVCF.
  * </p>
  *
  * <h3>Usage example</h3>
  * <pre>
- * ./gatk-launch \
- *   CombineGVCFs \
- *   -R reference.fasta \
+ * ./gatk CombineGVCFs \
  *   --variant sample1.g.vcf \
  *   --variant sample2.g.vcf \
  *   -O cohort.g.vcf
  * </pre>
  *
  * <h3>Caveats</h3>
- * <p>Only gVCF files produced by HaplotypeCaller (or CombineGVCFs) can be used as input for this tool. Some other
- * programs produce files that they call gVCFs but those lack some important information (accurate genotype likelihoods
+ * <p>Only GVCF files produced by HaplotypeCaller (or CombineGVCFs) can be used as input for this tool. Some other
+ * programs produce files that they call GVCFs but those lack some important information (accurate genotype likelihoods
  * for every position) that GenotypeGVCFs requires for its operation.</p>
- * <p>If the gVCF files contain allele specific annotations, add -G Standard -G AS_Standard to the command line.</p>
+ * <p>If the GVCF files contain allele specific annotations, add -G Standard -G AS_Standard to the command line.</p>
  *
  * <p>Users generating large callsets (1000+ samples) may prefer GenomicsDBImport, which uses Intel's GenomicsDB and is capable of scaling to much larger sample sizes than CombineGVCFs.
  * This tool provides a pure java reference implementation of the combine operation which is available on all architectures.<p/>
@@ -76,6 +74,11 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
     private VariantContextWriter vcfWriter;
     private SAMSequenceDictionary sequenceDictionary;
     private ReferenceConfidenceVariantContextMerger referenceConfidenceVariantContextMerger;
+
+    public static final String BP_RES_LONG_NAME = "convert-to-base-pair-resolution";
+    public static final String BP_RES_SHORT_NAME = "bpResolution";
+    public static final String BREAK_BANDS_LONG_NAME = "break-bands-at-multiples-of";
+    public static final String BREAK_BANDS_SHORT_NAME = "breakBandsAtMultiplesOf";
 
     /**
      * Which groups of annotations to add to the output VCF file.
@@ -91,7 +94,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
             doc="The combined GVCF output file", optional=false)
     private File outputFile;
 
-    @Argument(fullName="convertToBasePairResolution", shortName="bpResolution", doc = "If specified, convert banded gVCFs to all-sites gVCFs", optional=true)
+    @Argument(fullName=BP_RES_LONG_NAME, shortName=BP_RES_SHORT_NAME, doc = "If specified, convert banded gVCFs to all-sites gVCFs", optional=true)
     protected boolean useBpResolution = false;
 
     /**
@@ -101,7 +104,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
      *
      * Note that the --convertToBasePairResolution argument is just a special case of this argument with a value of 1.
      */
-    @Argument(fullName="breakBandsAtMultiplesOf", shortName="breakBandsAtMultiplesOf", doc = "If > 0, reference bands will be broken up at genomic positions that are multiples of this number", optional=true)
+    @Argument(fullName=BREAK_BANDS_LONG_NAME, shortName=BREAK_BANDS_SHORT_NAME, doc = "If > 0, reference bands will be broken up at genomic positions that are multiples of this number", optional=true)
     protected int multipleAtWhichToBreakBands = 0;
 
     /**

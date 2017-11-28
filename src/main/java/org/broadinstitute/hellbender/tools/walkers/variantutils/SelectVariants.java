@@ -83,15 +83,24 @@ import java.util.stream.Collectors;
  * A new VCF file containing the selected subset of variants.
  * </p>
  *
- * * <h3>Usage example</h3>
+ * * <h3>Usage examples</h3>
+ * <h4>Select SNPs</h4>
  * <pre>
- *     ./gatk-launch SelectVariants \
- *     -R reference.fasta \
+ *     ./gatk SelectVariants \
+ *     -R Homo_sapiens_assembly38.fasta \
  *     -V input.vcf \
  *     -selectType SNP \
  *     -O output.vcf
  * </pre>
  *
+ * <h4>Query Chromosome 20 Variants from a GenomicsDB</h4>
+ * <pre>
+ * ./gatk SelectVariants \
+ * -R Homo_sapiens_assembly38.fasta \
+ * -V gendb://genomicsDB \
+ * -L 20 \
+ * -O output.chr20.vcf
+ * </pre>
  */
 @CommandLineProgramProperties(
         summary = "This tool allows you to select a subset of variants based on various criteria in order to facilitate certain" +

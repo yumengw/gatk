@@ -136,8 +136,8 @@ public class FixCallSetSampleOrderingIntegrationTest extends CommandLineProgramT
         final File fixed = createTempFile("fixed_", ".vcf");
         args.addVCF(shuffled)
                 .addFileArgument(GenomicsDBImport.SAMPLE_NAME_MAP_LONG_NAME, sampleMap)
-                .addArgument(GenomicsDBImport.BATCHSIZE_ARG_NAME, String.valueOf(batchSize))
                 .addArgument(GenomicsDBImport.VCF_INITIALIZER_THREADS_LONG_NAME, String.valueOf(readerThreads))
+                .addArgument(GenomicsDBImport.BATCHSIZE_ARG_LONG_NAME, String.valueOf(batchSize))
                 .addBooleanArgument(FixCallSetSampleOrdering.SKIP_PROMPT_LONG_NAME, true)
                 .addOutput(fixed);
         if ( gvcfToHeaderSampleMapFile != null ) {
@@ -178,8 +178,8 @@ public class FixCallSetSampleOrderingIntegrationTest extends CommandLineProgramT
         final File fixed = createTempFile("fixed_", ".vcf");
         args.addVCF(shuffled)
                 .addFileArgument(GenomicsDBImport.SAMPLE_NAME_MAP_LONG_NAME, sampleMap)
-                .addArgument(GenomicsDBImport.BATCHSIZE_ARG_NAME, String.valueOf(batchSize))
                 .addArgument(GenomicsDBImport.VCF_INITIALIZER_THREADS_LONG_NAME, String.valueOf(readerThreads))
+                .addArgument(GenomicsDBImport.BATCHSIZE_ARG_LONG_NAME, String.valueOf(batchSize))
                 .addBooleanArgument(FixCallSetSampleOrdering.SKIP_PROMPT_LONG_NAME, true)
                 .addOutput(fixed);
         if ( gvcfToHeaderSampleMapFile != null ) {
