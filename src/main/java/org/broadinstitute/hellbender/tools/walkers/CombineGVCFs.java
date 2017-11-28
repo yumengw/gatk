@@ -203,7 +203,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
     @Override
     public void onTraversalStart() {
         // create the annotation engine
-        annotationEngine = VariantAnnotatorEngine.ofSelectedMinusExcluded(variantAnnotationArgumentCollection, dbsnp.dbsnp, Collections.emptyList());
+        annotationEngine = VariantAnnotatorEngine.ofSelectedMinusExcluded(variantAnnotationArgumentCollection, dbsnp.dbsnp, Collections.emptyList(), false);
 
         vcfWriter = getVCFWriter();
 
