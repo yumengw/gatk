@@ -231,7 +231,6 @@ public final class VariantContextTestUtils {
         return Collections.singletonList(attribute);
     }
 
-
     public static void assertGenotypesAreEqual(final Genotype actual, final Genotype expected) {
         Assert.assertEquals(actual.getSampleName(), expected.getSampleName(), "Genotype names");
         Assert.assertEquals(actual.getGenotypeString(), expected.getGenotypeString(), "Genotype string");
