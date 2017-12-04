@@ -26,17 +26,47 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * This tool uses Spark to do a parallel copy of either a file or a directory from GCS into HDFS.
- * Files are divided into chunks of size equal to the HDFS block size (with the exception of the final
- * chunk) and each Spark task is responsible for copying one chunk. To copy all of the files in a GCS directory,
- * provide the GCS directory path, including the trailing slash. Directory copies are non-recursive so
+ * Stage a Google Cloud Storage file or directory into an HDFS file system.
+ *
+ * <p>This tool uses Spark to do a parallel copy of either a file or a directory from GCS into an HDFS file
+ * system on the Spark cluster.</p>
+ *
+ * <p>Files are divided into chunks of size equal to the HDFS block size (with the exception of the final
+ * chunk) and each Spark task is responsible for copying one chunk. Directory copies are non-recursive so
  * subdirectories will be skipped. Within directories each file is divided into chunks independently (so this will be
  * inefficient if you have lots of files smaller than the block size). After all chunks are copied, the HDFS
- * concat method is used to stitch together chunks into single files without re-copying them.
+ * concat method is used to stitch together chunks into single files without re-copying them.</p>
+ *
+ * <h3>Input</h3>
+ * <ul>
+ * <li>A path to a file or directory in Google Cloud Storage. If the path indicates a directory it <em>must</em> include a
+ * trailing slash.</li>
+ * <li>A path to a new directory in the HDFS file system to which the data will be copied. This directory will be created by
+ * the tool and populated with the data transferred from GCS.</li>
+ * </ul>
+ *
+ * <h3>Usage example</h3>
+ * <pre>
+ *     ./gatk ParallelCopyGCSDirectoryIntoHDFSSpark \
+ *          --input-gcs-path gs://my-bucket/my-data-directory/ \
+ *          --output-hdfs-directory hdfs://my-dataproc-spark-cluster-m:8020/my-data \
+ *          -- \
+ *          --sparkRunner GCS \
+ *          --cluster my-dataproc-spark-cluster
+ * </pre>
+ *
+ * <h3>Notes</h3>
+ * <ul>
+ * <li>To copy all of the files in a GCS directory, make sure to include the trailing slash in the directory name.</li>
+ * <li>The output directory will be created by the tool. To ensure no data will be overwritten, the tool will throw an
+ * error if the output directory already exists.</li>
+ * </ul>
  */
 @DocumentedFeature
-@CommandLineProgramProperties(summary="Parallel copy a file or directory (non-recursive) from GCS into HDFS",
-        oneLineSummary="Parallel copy a file or directory from GCS into HDFS.",
+@CommandLineProgramProperties(summary="This tool copies a file or directory from Google Cloud Storage into" +
+        "an HDFS file system on a Spark cluster. Data is copied in parallel using multiple Spark tasks in order" +
+        "to enable a high-throughput transfer.",
+        oneLineSummary="Parallel copy a file or directory from Google Cloud Storage into HDFS",
         programGroup = SparkProgramGroup.class)
 @BetaFeature
 public class ParallelCopyGCSDirectoryIntoHDFSSpark extends GATKSparkTool {
@@ -45,12 +75,19 @@ public class ParallelCopyGCSDirectoryIntoHDFSSpark extends GATKSparkTool {
     // default buffer size for reading chunks is 64MiB based on performance profiling and what appears to be conventional
     // wisdom to use a power of two for byte buffer sizes
     public static final int SIXTY_FOUR_MIB = 67108864;
+    public static final String INPUT_GCS_PATH_LONG_NAME = "input-gcs-path";
+    public static final String INPUT_GCS_PATH_SHORT_NAME = INPUT_GCS_PATH_LONG_NAME;
+    public static final String OUTPUT_HDFS_DIRECTORY_LONG_NAME = "output-hdfs-directory";
+    public static final String OUTPUT_HDFS_DIRECTORY_SHORT_NAME = OUTPUT_HDFS_DIRECTORY_LONG_NAME;
 
-    @Argument(doc = "input GCS file path (add trailing slash when specifying a directory)", fullName = "inputGCSPath")
+    @Argument(doc = "input GCS file path (add trailing slash when specifying a directory)",
+            fullName = INPUT_GCS_PATH_LONG_NAME,
+            shortName = INPUT_GCS_PATH_SHORT_NAME)
     private String inputGCSPath = null;
 
-    @Argument(doc = "output directory on HDFS", shortName = "outputHDFSDirectory",
-            fullName = "outputHDFSDirectory")
+    @Argument(doc = "output directory on HDFS to into which to transfer the data (will be created by the tool)",
+            shortName = OUTPUT_HDFS_DIRECTORY_SHORT_NAME,
+            fullName = OUTPUT_HDFS_DIRECTORY_LONG_NAME)
     private String outputHDFSDirectory;
 
     @Override
