@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.tools.copynumber;
 
-import org.apache.commons.collections4.ListUtils;
+import htsjdk.samtools.SAMSequenceDictionary;
 import org.broadinstitute.barclay.argparser.Advanced;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.ArgumentCollection;
@@ -9,25 +9,25 @@ import org.broadinstitute.barclay.help.DocumentedFeature;
 import org.broadinstitute.hellbender.cmdline.CommandLineProgram;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.programgroups.CopyNumberProgramGroup;
-import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
-import org.broadinstitute.hellbender.tools.copynumber.coverage.readcount.SimpleCount;
-import org.broadinstitute.hellbender.tools.copynumber.coverage.readcount.SimpleCountCollection;
 import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberStandardArgument;
-import org.broadinstitute.hellbender.tools.copynumber.formats.collections.RecordCollection;
+import org.broadinstitute.hellbender.tools.copynumber.formats.collections.CoveragePerContigCollection;
+import org.broadinstitute.hellbender.tools.copynumber.formats.collections.SimpleCountCollection;
 import org.broadinstitute.hellbender.tools.copynumber.formats.collections.SimpleIntervalCollection;
+import org.broadinstitute.hellbender.tools.copynumber.formats.metadata.LocatableMetadata;
+import org.broadinstitute.hellbender.tools.copynumber.formats.metadata.SimpleLocatableMetadata;
+import org.broadinstitute.hellbender.tools.copynumber.formats.records.CoveragePerContig;
+import org.broadinstitute.hellbender.tools.copynumber.formats.records.SimpleCount;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.io.Resource;
 import org.broadinstitute.hellbender.utils.param.ParamUtils;
 import org.broadinstitute.hellbender.utils.python.PythonScriptExecutor;
-import org.broadinstitute.hellbender.utils.tsv.TableColumnCollection;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -148,15 +148,23 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
     protected Object doWork() {
         setModeAndValidateArguments();
 
-        //read in count files and output intervals and sample x coverage-per-contig metadata table to temporary files
-        final File sampleCoverageMetadataFile = IOUtils.createTempFile("sample-coverage-metadata", ".tsv");
-        final List<SimpleInterval> intervals = getIntervalsFromFirstReadCountFile();
+        //get sequence dictionary and intervals from the first read-count file to use to validate remaining files
+        //(this first file is read again below, which is slightly inefficient but is probably not worth the extra code)
+        final File firstReadCountFile = inputReadCountFiles.get(0);
+        logger.info(String.format("Retrieving intervals from first read-count file (%s)...", firstReadCountFile));
+        final SimpleCountCollection firstReadCounts = SimpleCountCollection.read(firstReadCountFile);
+        final SAMSequenceDictionary sequenceDictionary = firstReadCounts.getMetadata().getSequenceDictionary();
+        final List<SimpleInterval> intervals = firstReadCounts.getIntervals();
+
+        //read in count files and output intervals and samples x coverage-per-contig table to temporary files
         final File intervalsFile = IOUtils.createTempFile("intervals", ".tsv");
-        new SimpleIntervalCollection(intervals).write(intervalsFile);
-        writeSampleCoverageMetadata(sampleCoverageMetadataFile, intervals);
+        final LocatableMetadata metadata = new SimpleLocatableMetadata(sequenceDictionary);
+        new SimpleIntervalCollection(metadata, intervals).write(intervalsFile);
+        final File samplesByCoveragePerContigFile = IOUtils.createTempFile("samples-by-coverage-per-contig", ".tsv");
+        writeSamplesByCoveragePerContig(samplesByCoveragePerContigFile, metadata, intervals);
 
         //call python inference code
-        final boolean pythonReturnCode = executeDeterminePloidyAndDepthPythonScript(sampleCoverageMetadataFile, intervalsFile);
+        final boolean pythonReturnCode = executeDeterminePloidyAndDepthPythonScript(samplesByCoveragePerContigFile, intervalsFile);
 
         if (!pythonReturnCode) {
             throw new UserException("Python return code was non-zero.");
@@ -218,18 +226,12 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
 
     }
 
-    private List<SimpleInterval> getIntervalsFromFirstReadCountFile() {
-        final File firstReadCountFile = inputReadCountFiles.get(0);
-        logger.info(String.format("Retrieving intervals from first read-count file (%s)...", firstReadCountFile));
-        final SimpleCountCollection readCounts = SimpleCountCollection.read(firstReadCountFile);
-        return readCounts.getIntervals();
-    }
-
-    private void writeSampleCoverageMetadata(final File sampleCoverageMetadataFile,
-                                             final List<SimpleInterval> intervals) {
-        logger.info("Validating and aggregating metadata from input read-count files...");
+    private void writeSamplesByCoveragePerContig(final File samplesByCoveragePerContigFile,
+                                                 final LocatableMetadata metadata,
+                                                 final List<SimpleInterval> intervals) {
+        logger.info("Validating and aggregating coverage per contig from input read-count files...");
         final int numSamples = inputReadCountFiles.size();
-        final List<CoverageMetadata> coverageMetadatas = new ArrayList<>(numSamples);
+        final List<CoveragePerContig> coveragePerContigs = new ArrayList<>(numSamples);
         final List<String> contigs = intervals.stream().map(SimpleInterval::getContig).distinct().collect(Collectors.toList());
         final ListIterator<File> inputReadCountFilesIterator = inputReadCountFiles.listIterator();
         while (inputReadCountFilesIterator.hasNext()) {
@@ -237,57 +239,29 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
             final File inputReadCountFile = inputReadCountFilesIterator.next();
             logger.info(String.format("Aggregating read-count file %s (%d / %d)", inputReadCountFile, sampleIndex + 1, numSamples));
             final SimpleCountCollection readCounts = SimpleCountCollection.read(inputReadCountFile);
+            Utils.validateArg(readCounts.getMetadata().getSequenceDictionary().isSameDictionary(metadata.getSequenceDictionary()),
+                    String.format("Sequence dictionary for read-count file %s does not match those in other read-count files.", inputReadCountFile));
             Utils.validateArg(readCounts.getIntervals().equals(intervals),
                     String.format("Intervals for read-count file %s do not match those in other read-count files.", inputReadCountFile));
-            //calculate coverage per contig and construct coverage metadata for each sample
-            coverageMetadatas.add(new CoverageMetadata(
-                    readCounts.getSampleName(),
+            //calculate coverage per contig and construct record for each sample
+            coveragePerContigs.add(new CoveragePerContig(
+                    readCounts.getMetadata().getSampleName(),
                     readCounts.getRecords().stream()
                             .collect(Collectors.groupingBy(
                                     SimpleCount::getContig,
                                     LinkedHashMap::new,
                                     Collectors.summingInt(SimpleCount::getCount)))));
         }
-        new CoverageMetadataCollection(coverageMetadatas, contigs).write(sampleCoverageMetadataFile);
+        new CoveragePerContigCollection(metadata, coveragePerContigs, contigs)
+                .write(samplesByCoveragePerContigFile);
     }
 
-    private static final class CoverageMetadata {
-        private final String sampleName;
-        private final LinkedHashMap<String, Integer> coveragePerContig;
-
-        private CoverageMetadata(final String sampleName,
-                                 final LinkedHashMap<String, Integer> coveragePerContig) {
-            this.sampleName = sampleName;
-            this.coveragePerContig = coveragePerContig;
-        }
-    }
-
-    private static final class CoverageMetadataCollection extends RecordCollection<CoverageMetadata> {
-        private static final String SAMPLE_NAME_TABLE_COLUMN = "SAMPLE_NAME";
-
-        private CoverageMetadataCollection(final List<CoverageMetadata> coverageMetadatas,
-                                           final List<String> contigs) {
-            super(coverageMetadatas,
-                    new TableColumnCollection(ListUtils.union(Collections.singletonList(SAMPLE_NAME_TABLE_COLUMN), contigs)),
-                    dataLine -> new CoverageMetadata(
-                            dataLine.get(SAMPLE_NAME_TABLE_COLUMN),
-                            contigs.stream().collect(Collectors.toMap(
-                                    Function.identity(),
-                                    dataLine::getInt,
-                                    (u, v) -> {throw new GATKException.ShouldNeverReachHereException("Cannot have duplicate contigs.");},   //contigs should already be distinct
-                                    LinkedHashMap::new))),
-                    (coverageMetadata, dataLine) -> {
-                            dataLine.append(coverageMetadata.sampleName);
-                            contigs.stream().map(coverageMetadata.coveragePerContig::get).forEach(dataLine::append);});
-        }
-    }
-
-    private boolean executeDeterminePloidyAndDepthPythonScript(final File sampleCoverageMetadataFile,
+    private boolean executeDeterminePloidyAndDepthPythonScript(final File samplesByCoveragePerContigFile,
                                                                final File intervalsFile) {
         final PythonScriptExecutor executor = new PythonScriptExecutor(true);
         final String outputDirArg = Utils.nonEmpty(outputDir).endsWith(File.separator) ? outputDir : outputDir + File.separator;    //add trailing slash if necessary
         final List<String> arguments = new ArrayList<>(Arrays.asList(
-                "--sample_coverage_metadata=" + sampleCoverageMetadataFile.getAbsolutePath(),
+                "--sample_coverage_metadata=" + samplesByCoveragePerContigFile.getAbsolutePath(),   //note that the samples x coverage-by-contig table is referred to as "metadata" by gcnvkernel
                 "--output_calls_path=" + outputDirArg + outputPrefix + CALLS_PATH_SUFFIX));
         arguments.addAll(ploidyDeterminationArgumentCollection.generatePythonArguments());
 

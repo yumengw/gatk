@@ -74,7 +74,6 @@ workflow CNVGermlineCaseWorkflow {
                 contig_ploidy_calls_tar = DetermineGermlineContigPloidyCaseMode.contig_ploidy_calls_tar,
                 gcnv_model_tar = gcnv_model_tars[scatter_index],
                 intervals = ScatterIntervals.scattered_interval_lists[scatter_index],
-                ref_fasta_dict = ref_fasta_dict,
                 gatk4_jar_override = gatk4_jar_override,
                 gatk_docker = gatk_docker,
                 mem = mem_for_germline_cnv_caller
@@ -136,7 +135,6 @@ task GermlineCNVCallerCaseMode {
     File contig_ploidy_calls_tar
     File gcnv_model_tar
     File intervals
-    File ref_fasta_dict
     File? annotated_intervals
     String? output_dir
     File? gatk4_jar_override

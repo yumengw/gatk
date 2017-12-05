@@ -67,6 +67,8 @@ def read_sample_coverage_metadata(sample_metadata_collection: SampleMetadataColl
         num_contigs = None
         sample_names = []
         for row in reader:
+            if row[0].startswith('@'):
+                continue
             row_num += 1
             if row_num == 1:  # header
                 num_header_elems = len(row)
@@ -94,7 +96,7 @@ def read_sample_coverage_metadata(sample_metadata_collection: SampleMetadataColl
 def update_sample_metadata_collection_from_ploidy_determination_calls(
         sample_metadata_collection: SampleMetadataCollection,
         input_calls_path: str,
-        comment='#',
+        comment='@',
         delimiter='\t'):
     """Reads the output of contig ploidy determination tool and updates the given instance of
     `SampleMetadataCollection` for read depth and ploidy metadata.

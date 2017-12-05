@@ -70,12 +70,11 @@ gcnvkernel.DenoisingModelConfig.expose_args(
     parser,
     hide={
         "--max_bias_factors",
-        "--psi_j_scale",
+        "--psi_t_scale",
         "--log_mean_bias_std",
         "--init_ard_rel_unexplained_variance",
         "--enable_bias_factors",
         "--enable_explicit_gc_bias_modeling",
-        "--disable_bias_factors_in_flat_class",
         "--num_gc_bins",
         "--gc_curve_sd",
     })
@@ -85,9 +84,7 @@ gcnvkernel.DenoisingModelConfig.expose_args(
 gcnvkernel.CopyNumberCallingConfig.expose_args(
     parser,
     hide={
-        '--p_flat',
-        '--class_coherence_length',
-        '--initialize_to_flat_class'
+        '--class_coherence_length'
     })
 
 # override some inference parameters
@@ -101,7 +98,6 @@ gcnvkernel.HybridInferenceParameters.expose_args(
 
 def update_args_dict_from_exported_model(input_model_path: str,
                                          _args_dict: Dict[str, Any]):
-
     logging.info("Loading denoising model configuration from the provided model...")
     with open(os.path.join(input_model_path, "denoising_config.json"), 'r') as fp:
         imported_denoising_config_dict = json.load(fp)
@@ -111,8 +107,6 @@ def update_args_dict_from_exported_model(input_model_path: str,
         imported_denoising_config_dict['enable_bias_factors']
     _args_dict['enable_explicit_gc_bias_modeling'] =\
         imported_denoising_config_dict['enable_explicit_gc_bias_modeling']
-    _args_dict['disable_bias_factors_in_flat_class'] =\
-        imported_denoising_config_dict['disable_bias_factors_in_flat_class']
 
     # bias factor related
     _args_dict['max_bias_factors'] =\
@@ -128,8 +122,6 @@ def update_args_dict_from_exported_model(input_model_path: str,
                  + repr(_args_dict['enable_bias_factors']))
     logging.info("- explicit GC bias modeling enabled: "
                  + repr(_args_dict['enable_explicit_gc_bias_modeling']))
-    logging.info("- bias factors in flat classes disabled: "
-                 + repr(_args_dict['disable_bias_factors_in_flat_class']))
 
     if _args_dict['enable_bias_factors']:
         logging.info("- maximum number of bias factors: "
@@ -147,6 +139,9 @@ if __name__ == "__main__":
     # parse arguments
     args = parser.parse_args()
     gcnvkernel.cli_commons.set_logging_config_from_args(args)
+
+    # check gcnvkernel version in the input model path
+    gcnvkernel.io_commons.check_gcnvkernel_version_from_path(args.input_model_path)
 
     # load modeling interval list from the model
     logging.info("Loading modeling interval list from the provided model...")
@@ -201,7 +196,7 @@ if __name__ == "__main__":
 
     # save calls
     gcnvkernel.io_denoising_calling.SampleDenoisingAndCallingPosteriorsExporter(
-        shared_workspace, task.continuous_model, task.continuous_model_approx, sample_names,
+        shared_workspace, task.continuous_model, task.continuous_model_approx,
         args.output_calls_path)()
 
     # save a copy of targets in the calls path

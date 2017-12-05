@@ -98,7 +98,6 @@ workflow CNVGermlineCohortWorkflow {
                 read_count_files = CollectCounts.counts,
                 contig_ploidy_calls_tar = DetermineGermlineContigPloidyCohortMode.contig_ploidy_calls_tar,
                 intervals = ScatterIntervals.scattered_interval_lists[scatter_index],
-                ref_fasta_dict = ref_fasta_dict,
                 annotated_intervals = AnnotateIntervals.annotated_intervals,
                 gatk4_jar_override = gatk4_jar_override,
                 gatk_docker = gatk_docker,
@@ -161,7 +160,6 @@ task GermlineCNVCallerCohortMode {
     Array[File] read_count_files
     File contig_ploidy_calls_tar
     File intervals
-    File ref_fasta_dict
     File? annotated_intervals
     String? output_dir
     File? gatk4_jar_override
@@ -188,7 +186,6 @@ task GermlineCNVCallerCohortMode {
 
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
             -L ${intervals} \
-            --sequenceDictionary ${ref_fasta_dict} \
             --input ${sep=" --input " read_count_files} \
             --contigPloidyCalls contig-ploidy-calls \
             ${"--annotatedIntervals " + annotated_intervals} \

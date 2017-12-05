@@ -17,6 +17,7 @@ import org.broadinstitute.hellbender.tools.copynumber.denoising.GCBiasCorrector;
 import org.broadinstitute.hellbender.tools.copynumber.denoising.HDF5SVDReadCountPanelOfNormals;
 import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberArgumentValidationUtils;
 import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberStandardArgument;
+import org.broadinstitute.hellbender.tools.copynumber.formats.collections.AnnotatedIntervalCollection;
 import org.broadinstitute.hellbender.tools.copynumber.formats.collections.SimpleCountCollection;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -211,7 +212,11 @@ public final class CreateReadCountPanelOfNormals extends SparkCommandLineProgram
         final List<SimpleInterval> intervals = firstReadCounts.getIntervals();
 
         //get GC content (null if not provided)
-        final double[] intervalGCContent = GCBiasCorrector.validateIntervalGCContent(sequenceDictionary, intervals, annotatedIntervalsFile);
+        final AnnotatedIntervalCollection annotatedIntervals = CopyNumberArgumentValidationUtils.validateAnnotatedIntervals(
+                annotatedIntervalsFile, firstReadCounts, logger);
+        final double[] intervalGCContent = annotatedIntervals == null
+                ? null
+                : annotatedIntervals.getRecords().stream().mapToDouble(i -> i.getAnnotationSet().getGCContent()).toArray();
 
         //validate input read-count files (i.e., check intervals and that only integer counts are contained)
         //and aggregate as a RealMatrix with dimensions numIntervals x numSamples

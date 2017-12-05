@@ -114,30 +114,6 @@ public final class GCBiasCorrector {
     }
 
     /**
-     * Checks equality of sequence dictionary and intervals against those contained in an
-     * {@link AnnotatedIntervalCollection} represented by {@code inputFile}.
-     * If the latter is {@code null}, then {@code null} is returned; otherwise,
-     * a double array of the GC content in the intervals is returned if the intervals are equal,
-     * and an exception is thrown if they are not.
-     */
-    public static double[] validateIntervalGCContent(final SAMSequenceDictionary sequenceDictionary,
-                                                     final List<SimpleInterval> intervals,
-                                                     final File inputFile) {
-        if (inputFile == null) {
-            logger.info("No GC-content annotations for intervals found; GC-bias correction will not be performed...");
-            return null;
-        }
-        logger.info("Reading and validating GC-content annotations for intervals...");
-        final AnnotatedIntervalCollection annotatedIntervals = new AnnotatedIntervalCollection(inputFile);
-        if (!CopyNumberArgumentValidationUtils.isSameDictionary(annotatedIntervals.getMetadata().getSequenceDictionary(), sequenceDictionary)) {
-            logger.warn("Annotated-intervals file contains incorrect sequence dictionary.");
-        }
-        Utils.validateArg(annotatedIntervals.getIntervals().equals(intervals),
-                "Annotated intervals do not match provided intervals.");
-        return annotatedIntervals.getRecords().stream().mapToDouble(i -> i.getAnnotationSet().getGCContent()).toArray();
-    }
-
-    /**
      * As described above, calculate medians of each GC bin and convolve with an exponential kernel.
      *
      * @param readCountsByGC integer read counts for each GC bin

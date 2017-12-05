@@ -75,7 +75,6 @@ gcnvkernel.DenoisingModelConfig.expose_args(
         "--init_ard_rel_unexplained_variance",
         "--enable_bias_factors",
         "--enable_explicit_gc_bias_modeling",
-        "--disable_bias_factors_in_flat_class",
         "--num_gc_bins",
         "--gc_curve_sd",
     })
@@ -85,9 +84,7 @@ gcnvkernel.DenoisingModelConfig.expose_args(
 gcnvkernel.CopyNumberCallingConfig.expose_args(
     parser,
     hide={
-        '--p_flat',
-        '--class_coherence_length',
-        '--initialize_to_flat_class'
+        '--class_coherence_length'
     })
 
 # override some inference parameters
@@ -110,8 +107,6 @@ def update_args_dict_from_exported_model(input_model_path: str,
         imported_denoising_config_dict['enable_bias_factors']
     _args_dict['enable_explicit_gc_bias_modeling'] =\
         imported_denoising_config_dict['enable_explicit_gc_bias_modeling']
-    _args_dict['disable_bias_factors_in_flat_class'] =\
-        imported_denoising_config_dict['disable_bias_factors_in_flat_class']
 
     # bias factor related
     _args_dict['max_bias_factors'] =\
@@ -127,8 +122,6 @@ def update_args_dict_from_exported_model(input_model_path: str,
                  + repr(_args_dict['enable_bias_factors']))
     logging.info("- explicit GC bias modeling enabled: "
                  + repr(_args_dict['enable_explicit_gc_bias_modeling']))
-    logging.info("- bias factors in flat classes disabled: "
-                 + repr(_args_dict['disable_bias_factors_in_flat_class']))
 
     if _args_dict['enable_bias_factors']:
         logging.info("- maximum number of bias factors: "

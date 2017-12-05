@@ -83,7 +83,7 @@ class SamplePloidyExporter:
                                      sample_ploidy_metadata: SamplePloidyMetadata,
                                      extra_comment_lines: List[str] = None,
                                      delimiter='\t',
-                                     comment='#'):
+                                     comment='@'):
         with open(os.path.join(sample_posterior_path, io_consts.default_sample_contig_ploidy_tsv_filename), 'w') as f:
             if extra_comment_lines is not None:
                 for comment_line in extra_comment_lines:
@@ -102,7 +102,7 @@ class SamplePloidyExporter:
                                   sample_read_depth_metadata: SampleReadDepthMetadata,
                                   extra_comment_lines: List[str] = None,
                                   delimiter='\t',
-                                  comment='#'):
+                                  comment='@'):
         with open(os.path.join(sample_posterior_path, io_consts.default_sample_read_depth_tsv_filename), 'w') as f:
             if extra_comment_lines is not None:
                 for comment_line in extra_comment_lines:

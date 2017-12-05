@@ -69,7 +69,7 @@ class PloidyModelConfig:
 
     @staticmethod
     def get_contig_ploidy_prior_map_from_tsv_file(input_path: str) -> Dict[str, np.ndarray]:
-        contig_ploidy_prior_pd = pd.read_csv(input_path, delimiter='\t', comment='#')
+        contig_ploidy_prior_pd = pd.read_csv(input_path, delimiter='\t', comment='@')
         columns = [str(x) for x in contig_ploidy_prior_pd.columns.values]
         assert len(columns) > 1
         assert columns[0] == PloidyModelConfig._contig_name_column

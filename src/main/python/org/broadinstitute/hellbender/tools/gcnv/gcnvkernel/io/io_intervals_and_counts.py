@@ -37,7 +37,7 @@ def load_read_counts_tsv_file(read_counts_tsv_file: str,
         sample name, counts, (and optionally a list of intervals if `return_interval_list` == True)
     """
     sample_name = io_commons.extract_sample_name_from_header(read_counts_tsv_file)
-    counts_pd = pd.read_csv(read_counts_tsv_file, delimiter='\t', comment='#', nrows=max_rows,
+    counts_pd = pd.read_csv(read_counts_tsv_file, delimiter='\t', comment='@', nrows=max_rows,
                             dtype={**read_count_dtypes_dict})
     if return_interval_list:
         interval_list_pd = counts_pd[list(interval_dtypes_dict.keys())]
@@ -55,7 +55,7 @@ def load_interval_list_tsv_file(interval_list_tsv_file: str) -> List[Interval]:
     Returns:
         interval list
     """
-    interval_list_pd = pd.read_csv(interval_list_tsv_file, delimiter='\t',
+    interval_list_pd = pd.read_csv(interval_list_tsv_file, delimiter='\t', comment='@',
                                    dtype={**interval_dtypes_dict, **interval_annotations_dtypes})
     return _convert_interval_list_pandas_to_gcnv_interval_list(interval_list_pd, interval_list_tsv_file)
 

@@ -21,6 +21,7 @@ public final class CopyRatioSegmentCollection extends AbstractSampleLocatableCol
 
         static final TableColumnCollection COLUMNS = new TableColumnCollection((Object[]) values());
     }
+
     private static final Function<DataLine, CopyRatioSegment> COPY_RATIO_SEGMENT_RECORD_FROM_DATA_LINE_DECODER = dataLine -> {
         final String contig = dataLine.get(CopyRatioSegmentTableColumn.CONTIG);
         final int start = dataLine.getInt(CopyRatioSegmentTableColumn.START);

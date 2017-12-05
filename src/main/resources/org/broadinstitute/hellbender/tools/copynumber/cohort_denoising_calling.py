@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     # save calls
     gcnvkernel.io_denoising_calling.SampleDenoisingAndCallingPosteriorsExporter(
-        shared_workspace, task.continuous_model, task.continuous_model_approx, sample_names,
+        shared_workspace, task.continuous_model, task.continuous_model_approx,
         args.output_calls_path)()
 
     # save a copy of targets in the calls path
