@@ -2,6 +2,7 @@ package org.broadinstitute.hellbender.engine;
 
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.ReferenceSequence;
+import java.nio.file.Path;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.GATKBaseTest;
@@ -36,7 +37,7 @@ public final class ReferenceDataSourceUnitTest extends GATKBaseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNullReference() {
-        ReferenceDataSource refDataSource = new ReferenceFileSource(null);
+        ReferenceDataSource refDataSource = new ReferenceFileSource((Path)null);
     }
 
     @Test

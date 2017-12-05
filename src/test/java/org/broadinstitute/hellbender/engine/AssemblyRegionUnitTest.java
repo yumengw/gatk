@@ -35,7 +35,7 @@ public final class AssemblyRegionUnitTest extends GATKBaseTest {
     @BeforeClass
     public void init() throws FileNotFoundException {
         // sequence
-        seq = new CachingIndexedFastaSequenceFile(new File(hg19MiniReference));
+        seq = new CachingIndexedFastaSequenceFile(IOUtils.getPath(hg19MiniReference));
         contig = "1";
         contigLength = seq.getSequence(contig).length();
         header = ArtificialReadUtils.createArtificialSamHeader(seq.getSequenceDictionary());

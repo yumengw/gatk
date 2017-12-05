@@ -10,6 +10,7 @@ import htsjdk.samtools.util.IntervalList;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.samtools.util.OverlapDetector;
 import htsjdk.tribble.Feature;
+import java.nio.file.Path;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -553,7 +554,7 @@ public final class IntervalUtils {
      * @param reference The reference for the intervals.
      * @return A map of contig names with their sizes.
      */
-    public static Map<String, Integer> getContigSizes(final File reference) {
+    public static Map<String, Integer> getContigSizes(final Path reference) {
         final ReferenceSequenceFile referenceSequenceFile = createReference(reference);
         final List<GenomeLoc> locs = GenomeLocSortedSet.createSetFromSequenceDictionary(referenceSequenceFile.getSequenceDictionary()).toList();
         final Map<String, Integer> lengths = new LinkedHashMap<>();
@@ -956,8 +957,8 @@ public final class IntervalUtils {
         return sortAndMergeIntervals(parser, expanded, IntervalMergingRule.ALL).toList();
     }
 
-    private static ReferenceSequenceFile createReference(final File fastaFile) {
-            return CachingIndexedFastaSequenceFile.checkAndCreate(fastaFile);
+    private static ReferenceSequenceFile createReference(final Path fastaPath) {
+            return CachingIndexedFastaSequenceFile.checkAndCreate(fastaPath);
     }
 
     private static LinkedHashMap<String, List<GenomeLoc>> splitByContig(final List<GenomeLoc> sorted) {
