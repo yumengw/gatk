@@ -121,8 +121,6 @@ class SamplePloidyExporter:
             _logger.info("Saving posteriors for sample \"{0}\" in \"{1}\"...".format(
                 sample_name, sample_posterior_path))
 
-            # todo warn if ploidy genotyping quality is low?
-            # todo warn if ploidy genotyping is incompatible with a given list of sex genotypes?
             # find best contig ploidy calls and calculate ploidy genotyping quality
             ploidy_j = np.zeros((self.ploidy_workspace.num_contigs,), dtype=types.small_uint)
             ploidy_genotyping_quality_j = np.zeros((self.ploidy_workspace.num_contigs,), dtype=types.floatX)

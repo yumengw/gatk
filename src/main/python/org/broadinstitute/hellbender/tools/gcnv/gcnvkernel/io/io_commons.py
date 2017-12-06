@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 def extract_sample_name_from_header(input_file: str,
-                                    max_scan_lines: int = 1000,
+                                    max_scan_lines: int = 10000,
                                     sample_name_header_regexp: str = io_consts.sample_name_header_regexp) -> str:
     """Extracts sample name from header.
 

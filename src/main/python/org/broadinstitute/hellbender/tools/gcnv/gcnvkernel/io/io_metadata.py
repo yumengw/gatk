@@ -67,8 +67,6 @@ def read_sample_coverage_metadata(sample_metadata_collection: SampleMetadataColl
         num_contigs = None
         sample_names = []
         for row in reader:
-            if row[0].startswith('@'):
-                continue
             row_num += 1
             if row_num == 1:  # header
                 num_header_elems = len(row)
