@@ -43,7 +43,7 @@ public class ReferenceFileSource implements ReferenceSource, Serializable {
         }
     }
 
-        @Override
+    @Override
     public ReferenceBases getReferenceBases(final PipelineOptions pipelineOptions, final SimpleInterval interval) throws IOException {
         try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(referencePath) ) {
             ReferenceSequence sequence = referenceSequenceFile.getSubsequenceAt(interval.getContig(), interval.getStart(), interval.getEnd());
