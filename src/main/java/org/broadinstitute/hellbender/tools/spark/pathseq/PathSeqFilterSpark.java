@@ -118,7 +118,7 @@ public final class PathSeqFilterSpark extends GATKSparkTool {
                             final SAMFileHeader header) {
         try {
             ReadsSparkSink.writeReads(ctx, outputFile,
-                    hasReference() ? referenceArguments.getReferenceFile().getAbsolutePath() : null,
+                    hasReference() ? referenceArguments.getReferencePath().toFile().getAbsolutePath() : null,
                     reads, header, shardedOutput ? ReadsWriteFormat.SHARDED : ReadsWriteFormat.SINGLE,
                     getRecommendedNumReducers());
         } catch (IOException e) {

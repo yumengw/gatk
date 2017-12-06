@@ -13,13 +13,6 @@ public abstract class ReferenceInputArgumentCollection implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Get the reference file specified at the command line, creating the File object first if necessary.
-     *
-     * Use getReferencePath() instead.
-     */
-    public abstract File getReferenceFile();
-
-    /**
      * Get the name of the reference file specified at the command line.
      */
     public abstract String getReferenceFileName();
