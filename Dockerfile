@@ -42,7 +42,7 @@ RUN mkdir $DOWNLOAD_DIR && \
 ENV PATH $CONDA_PATH/envs/gatk/bin:$CONDA_PATH/bin:$PATH
 RUN conda env create -n gatk -f /gatk/scripts/gatkcondaenv.yml && \
     echo "source activate gatk" >> /gatk/gatkenv.rc
-RUN /bin/bash -c "source activate gatk; pip install src/main/python/org/broadinstitute/hellbender/tools/gcnv/"
+RUN bash --init-file /gatk/gatkenv.rc -c pip install src/main/python/org/broadinstitute/hellbender/tools/gcnv/
 
 CMD ["bash", "--init-file", "/gatk/gatkenv.rc"]
 
