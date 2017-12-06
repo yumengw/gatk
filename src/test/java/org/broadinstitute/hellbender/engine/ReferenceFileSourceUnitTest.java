@@ -1,6 +1,10 @@
 package org.broadinstitute.hellbender.engine;
 
-import org.broadinstitute.hellbender.engine.datasources.ReferenceFileSource;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.GATKBaseTest;
 
@@ -12,7 +16,46 @@ public class ReferenceFileSourceUnitTest extends GATKBaseTest {
 
     @Test(expectedExceptions = UserException.MissingReference.class)
     public void testMissingReferenceFile() throws IOException {
-        new ReferenceFileSource(GATKBaseTest.getSafeNonExistentFile("NonExistentReference.fasta").getAbsolutePath());
+        new org.broadinstitute.hellbender.engine.datasources.ReferenceFileSource(
+                GATKBaseTest.getSafeNonExistentFile("NonExistentReference.fasta")
+                        .getAbsolutePath());
     }
 
+    @Test(expectedExceptions = UserException.MissingReferenceFaiFile.class)
+    public void testReferenceInPathWithoutFai() throws IOException {
+        try (FileSystem jimfs = Jimfs.newFileSystem(Configuration.unix())) {
+            final Path refPath = jimfs.getPath("reference.fasta");
+            Files.createFile(refPath);
+            final Path dictPath = jimfs.getPath("reference.dict");
+            Files.createFile(dictPath);
+
+            new org.broadinstitute.hellbender.engine.ReferenceFileSource(refPath);
+        }
+    }
+
+    @Test(expectedExceptions = UserException.MissingReferenceDictFile.class)
+    public void testReferenceInPathWithoutDict() throws IOException {
+        try (FileSystem jimfs = Jimfs.newFileSystem(Configuration.unix())) {
+            final Path refPath = jimfs.getPath("reference.fasta");
+            Files.createFile(refPath);
+            final Path faiFile = jimfs.getPath("reference.fasta.fai");
+            Files.createFile(faiFile);
+
+            new org.broadinstitute.hellbender.engine.ReferenceFileSource(refPath);
+        }
+    }
+
+    @Test
+    public void testReferenceInPath() throws IOException {
+        try (FileSystem jimfs = Jimfs.newFileSystem(Configuration.unix())) {
+            final Path refPath = jimfs.getPath("reference.fasta");
+            Files.createFile(refPath);
+            final Path faiFile = jimfs.getPath("reference.fasta.fai");
+            Files.createFile(faiFile);
+            final Path dictPath = jimfs.getPath("reference.dict");
+            Files.createFile(dictPath);
+
+            new org.broadinstitute.hellbender.engine.ReferenceFileSource(refPath);
+        }
+    }
 }

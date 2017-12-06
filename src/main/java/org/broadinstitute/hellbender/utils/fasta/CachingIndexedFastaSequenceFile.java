@@ -5,6 +5,7 @@ import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.reference.FastaSequenceIndex;
 import htsjdk.samtools.reference.IndexedFastaSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequence;
+import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.StringUtil;
 import java.net.URI;
@@ -21,6 +22,7 @@ import org.broadinstitute.hellbender.utils.BaseUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 
 /**
  * A caching version of the IndexedFastaSequenceFile that avoids going to disk as often as the raw indexer.
@@ -160,12 +162,10 @@ public final class CachingIndexedFastaSequenceFile extends IndexedFastaSequenceF
             throw new UserException.CannotHandleGzippedRef();
         }
 
-        final Path indexPath = Paths.get(URI.create(fastaPath.toUri().toString() + ".fai"));
+        final Path indexPath = IOUtil.addExtension(fastaPath, ".fai");
 
         // determine the name for the dict file
-        // TODO: use the htsjdk method implemented in https://github.com/samtools/htsjdk/pull/774
-        final String fastaExt = fastaPath.toString().endsWith("fa") ? "\\.fa$" : "\\.fasta$";
-        final Path dictPath = Paths.get(URI.create(fastaPath.toUri().toString().replaceAll(fastaExt, IOUtil.DICT_FILE_EXTENSION)));
+        final Path dictPath = ReferenceSequenceFileFactory.getDefaultDictionaryForReferenceSequence(fastaPath);
 
         // It's an error if either the fai or dict file does not exist. The user is now responsible
         // for creating these files.

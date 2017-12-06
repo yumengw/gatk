@@ -5,8 +5,10 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
+import java.nio.file.Files;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.reference.ReferenceBases;
 
 import java.io.File;
@@ -27,7 +29,7 @@ public class ReferenceFileSource implements ReferenceSource, Serializable {
      * @param referencePath the local path to the reference file
      */
     public ReferenceFileSource(final String referencePath) {
-        if (!new File(referencePath).exists()) {
+        if (!Files.exists(IOUtils.getPath(referencePath))) {
             throw new UserException.MissingReference("The specified fasta file (" + referencePath + ") does not exist.");
         }
         this.referencePath = referencePath;
@@ -35,14 +37,14 @@ public class ReferenceFileSource implements ReferenceSource, Serializable {
 
     @Override
     public ReferenceBases getReferenceBases(final PipelineOptions pipelineOptions, final SimpleInterval interval) throws IOException {
-        try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(referencePath)) ) {
+        try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(IOUtils.getPath(referencePath)) ) {
             ReferenceSequence sequence = referenceSequenceFile.getSubsequenceAt(interval.getContig(), interval.getStart(), interval.getEnd());
             return new ReferenceBases(sequence.getBases(), interval);
         }
     }
 
     public Map<String, ReferenceBases> getAllReferenceBases() throws IOException {
-        try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(referencePath)) ) {
+        try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(IOUtils.getPath(referencePath)) ) {
             Map<String, ReferenceBases> bases = new LinkedHashMap<>();
             ReferenceSequence seq;
             while ( (seq = referenceSequenceFile.nextSequence()) != null ) {
@@ -55,7 +57,7 @@ public class ReferenceFileSource implements ReferenceSource, Serializable {
 
     @Override
     public SAMSequenceDictionary getReferenceSequenceDictionary(final SAMSequenceDictionary optReadSequenceDictionaryToMatch) throws IOException {
-        try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(referencePath)) ) {
+        try ( ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(IOUtils.getPath(referencePath)) ) {
             return referenceSequenceFile.getSequenceDictionary();
         }
     }
