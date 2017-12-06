@@ -48,7 +48,7 @@ public final class ReferenceFileSource implements ReferenceDataSource {
      * @param fastaFile reference fasta file
      */
     public ReferenceFileSource(final File fastaFile) {
-        this(fastaFile.toPath());
+        this(Utils.nonNull(fastaFile).toPath());
     }
 
     /**
