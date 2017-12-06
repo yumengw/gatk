@@ -58,4 +58,19 @@ public class ReferenceFileSourceUnitTest extends GATKBaseTest {
             new org.broadinstitute.hellbender.engine.ReferenceFileSource(refPath);
         }
     }
+
+    @Test
+    public void testDatasourcesReferenceInPath() throws IOException {
+        try (FileSystem jimfs = Jimfs.newFileSystem(Configuration.unix())) {
+            final Path refPath = jimfs.getPath("reference.fasta");
+            Files.createFile(refPath);
+            final Path faiFile = jimfs.getPath("reference.fasta.fai");
+            Files.createFile(faiFile);
+            final Path dictPath = jimfs.getPath("reference.dict");
+            Files.createFile(dictPath);
+
+            new org.broadinstitute.hellbender.engine.datasources.ReferenceFileSource(refPath);
+        }
+    }
+
 }
