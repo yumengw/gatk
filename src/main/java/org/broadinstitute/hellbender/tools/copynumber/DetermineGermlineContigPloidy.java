@@ -51,8 +51,6 @@ import java.util.stream.Collectors;
  *      by the denoising model.  In this case, all intervals specified by -L must be contained in this file.
  *  </p>
  *
- * TODO Mehrtash can add documentation here
- *
  * <h3>Examples</h3>
  *
  * <pre>
@@ -61,7 +59,7 @@ import java.util.stream.Collectors;
  *   --input normal_2.counts.hdf5 \
  *   ... \
  *   --output output_dir \
- *   --outputPrefix normal_cohort
+ *   --output-prefix normal_cohort
  * </pre>
  *
  * <pre>
@@ -70,7 +68,7 @@ import java.util.stream.Collectors;
  *   --model normal_cohort.ploidyModel.tsv \
  *   ... \
  *   --output output_dir \
- *   --outputPrefix normal_1
+ *   --output-prefix normal_1
  * </pre>
  *
  * @author Mehrtash Babadi &lt;mehrtash@broadinstitute.org&gt;
@@ -93,15 +91,13 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
     public static final String MODEL_PATH_SUFFIX = "-model";
     public static final String CALLS_PATH_SUFFIX = "-calls";
 
-    public static final String CONTIG_PLOIDY_PRIORS_FILE_LONG_NAME = "contigPloidyPriors";
-    public static final String CONTIG_PLOIDY_PRIORS_FILE_SHORT_NAME = "priors";
+    public static final String CONTIG_PLOIDY_PRIORS_FILE_LONG_NAME = "contig_ploidy_priors";
 
     @Argument(
             doc = "Input read-count files containing integer read counts in genomic intervals for all samples.  " +
                     "Intervals must be identical and in the same order for all samples.  " +
                     "If only a single sample is specified, an input ploidy-model directory must also be specified.  ",
             fullName = StandardArgumentDefinitions.INPUT_LONG_NAME,
-            shortName = StandardArgumentDefinitions.INPUT_SHORT_NAME,
             minElements = 1
     )
     private List<File> inputReadCountFiles = new ArrayList<>();
@@ -110,7 +106,6 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
             doc = "Input file specifying contig-ploidy priors.  If only a single sample is specified, this input should not be provided.  " +
                     "If multiple samples are specified, this input is required.",
             fullName = CONTIG_PLOIDY_PRIORS_FILE_LONG_NAME,
-            shortName = CONTIG_PLOIDY_PRIORS_FILE_SHORT_NAME,
             optional = true
     )
     private File inputContigPloidyPriorsFile;
@@ -119,22 +114,19 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
             doc = "Input ploidy-model directory.  If only a single sample is specified, this input is required.  " +
                     "If multiple samples are specified, this input should not be provided.",
             fullName = CopyNumberStandardArgument.MODEL_LONG_NAME,
-            shortName = CopyNumberStandardArgument.MODEL_SHORT_NAME,
             optional = true
     )
     private String inputModelDir;
 
     @Argument(
             doc = "Prefix for output filenames.",
-            fullName =  CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME,
-            shortName = CopyNumberStandardArgument.OUTPUT_PREFIX_SHORT_NAME
+            fullName =  CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME
     )
     private String outputPrefix;
 
     @Argument(
             doc = "Output directory.",
-            fullName =  StandardArgumentDefinitions.OUTPUT_LONG_NAME,
-            shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME
+            fullName =  StandardArgumentDefinitions.OUTPUT_LONG_NAME
     )
     private String outputDir;
 
@@ -287,7 +279,7 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
 
         @Argument(
                 doc = "Contig-level mean bias standard deviation.  If a single sample is provided, this input will be ignored.",
-                fullName = "meanBiasStandardDeviation",
+                fullName = "mean-bias-standard-deviation",
                 minValue = 0.,
                 optional = true
         )
@@ -295,7 +287,7 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
 
         @Argument(
                 doc = "Typical mapping error rate.",
-                fullName = "mappingErrorRate",
+                fullName = "mapping-error-rate",
                 minValue = 0.,
                 optional = true
         )
@@ -303,7 +295,7 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
 
         @Argument(
                 doc = "Global contig-level unexplained variance scale.  If a single sample is provided, this input will be ignored.",
-                fullName = "globalPsiScale",
+                fullName = "global-psi-scale",
                 minValue = 0.,
                 optional = true
         )
@@ -311,7 +303,7 @@ public final class DetermineGermlineContigPloidy extends CommandLineProgram {
 
         @Argument(
                 doc = "Sample-specific contig-level unexplained variance scale.",
-                fullName = "samplePsiScale",
+                fullName = "sample-psi-scale",
                 minValue = 0.,
                 optional = true
         )

@@ -25,8 +25,7 @@ public final class CopyNumberStandardArgument {
     public static final String SEGMENTS_FILE_LONG_NAME = "segments";
     public static final String SEGMENTS_FILE_SHORT_NAME = "S";
 
-    public static final String OUTPUT_PREFIX_LONG_NAME = "outputPrefix";
-    public static final String OUTPUT_PREFIX_SHORT_NAME = "pre";
+    public static final String OUTPUT_PREFIX_LONG_NAME = "output-prefix";
 
     public static final String MODEL_LONG_NAME = "model";
     public static final String MODEL_SHORT_NAME = "M";

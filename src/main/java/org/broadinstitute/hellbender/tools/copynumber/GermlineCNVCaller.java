@@ -52,8 +52,6 @@ import java.util.stream.Collectors;
  *      should be specified via -L.
  *  </p>
  *
- * TODO Mehrtash can add documentation here
- *
  * <h3>Examples</h3>
  *
  * <pre>
@@ -63,7 +61,7 @@ import java.util.stream.Collectors;
  *   --input normal_2.counts.hdf5 \
  *   ... \
  *   --output output_dir \
- *   --outputPrefix normal_cohort
+ *   --output-prefix normal_cohort
  * </pre>
  *
  * <pre>
@@ -73,7 +71,7 @@ import java.util.stream.Collectors;
  *   --model normal_cohort.ploidyModel.tsv \
  *   ... \
  *   --output output_dir \
- *   --outputPrefix normal_1
+ *   --output-prefix normal_1
  * </pre>
  *
  * @author Mehrtash Babadi &lt;mehrtash@broadinstitute.org&gt;
@@ -98,8 +96,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
     public static final String MODEL_PATH_SUFFIX = "-model";
     public static final String CALLS_PATH_SUFFIX = "-calls";
 
-    public static final String CONTIG_PLOIDY_CALLS_DIRECTORY_LONG_NAME = "contigPloidyCalls";
-    public static final String CONTIG_PLOIDY_CALLS_DIRECTORY_SHORT_NAME = "ploidyCalls";
+    public static final String CONTIG_PLOIDY_CALLS_DIRECTORY_LONG_NAME = "contig-ploidy-calls";
 
     @Argument(
             doc = "Input read-count files containing integer read counts in genomic intervals for all samples.  " +
@@ -107,15 +104,13 @@ public final class GermlineCNVCaller extends CommandLineProgram {
                     "if none are specified, then intervals must be identical and in the same order for all samples.  " +
                     "If only a single sample is specified, an input denoising-model directory must also be specified.  ",
             fullName = StandardArgumentDefinitions.INPUT_LONG_NAME,
-            shortName = StandardArgumentDefinitions.INPUT_SHORT_NAME,
             minElements = 1
     )
     private List<File> inputReadCountFiles = new ArrayList<>();
 
     @Argument(
             doc = "Input contig-ploidy calls directory (output of DetermlineGermlineContigPloidy).",
-            fullName = CONTIG_PLOIDY_CALLS_DIRECTORY_LONG_NAME,
-            shortName = CONTIG_PLOIDY_CALLS_DIRECTORY_SHORT_NAME
+            fullName = CONTIG_PLOIDY_CALLS_DIRECTORY_LONG_NAME
     )
     private String inputContigPloidyCallsDir;
 
@@ -123,7 +118,6 @@ public final class GermlineCNVCaller extends CommandLineProgram {
             doc = "Input denoising-model directory.  If only a single sample is specified, this input is required.  " +
                     "If multiple samples are specified, a new model will be built using this input model to initialize.",
             fullName = CopyNumberStandardArgument.MODEL_LONG_NAME,
-            shortName = CopyNumberStandardArgument.MODEL_SHORT_NAME,
             optional = true
     )
     private String inputModelDir = null;
@@ -133,22 +127,19 @@ public final class GermlineCNVCaller extends CommandLineProgram {
                     "All intervals specified via -L must be contained.  " +
                     "If only a single sample is specified, this input should not be provided.",
             fullName = CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_LONG_NAME,
-            shortName = CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_SHORT_NAME,
             optional = true
     )
     private File inputAnnotatedIntervalsFile = null;
 
     @Argument(
             doc = "Prefix for output filenames.",
-            fullName =  CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME,
-            shortName = CopyNumberStandardArgument.OUTPUT_PREFIX_SHORT_NAME
+            fullName =  CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME
     )
     private String outputPrefix;
 
     @Argument(
             doc = "Output directory.",
-            fullName =  StandardArgumentDefinitions.OUTPUT_LONG_NAME,
-            shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME
+            fullName =  StandardArgumentDefinitions.OUTPUT_LONG_NAME
     )
     private String outputDir;
 
@@ -315,14 +306,14 @@ public final class GermlineCNVCaller extends CommandLineProgram {
                 arguments);
     }
 
-    private enum GCExpectationMode {
+    private enum CopyNumberPosteriorExpectationMode {
         MAP("map"),
         EXACT("exact"),
         HYBRID("hybrid");
 
         final String pythonArgumentString;
 
-        GCExpectationMode(final String pythonArgumentString) {
+        CopyNumberPosteriorExpectationMode(final String pythonArgumentString) {
             this.pythonArgumentString = pythonArgumentString;
         }
     }
@@ -332,7 +323,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Maximum number of bias factors.",
-                fullName = "maxBiasFactors",
+                fullName = "max-bias-factors",
                 minValue = 0,
                 optional = true
         )
@@ -340,7 +331,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Typical mapping error rate.",
-                fullName = "mappingErrorRate",
+                fullName = "mapping-error-rate",
                 minValue = 0.,
                 optional = true
         )
@@ -348,7 +339,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Typical scale of interval-specific unexplained variance.",
-                fullName = "intervalPsiScale",
+                fullName = "interval-psi-scale",
                 minValue = 0.,
                 optional = true
         )
@@ -356,7 +347,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Typical scale of sample-specific unexplained variance.",
-                fullName = "samplePsiScale",
+                fullName = "sample-psi-scale",
                 minValue = 0.,
                 optional = true
         )
@@ -364,7 +355,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Precision of read depth pinning to its global value.",
-                fullName = "depthCorrectionTau",
+                fullName = "depth-correction-tau",
                 minValue = 0.,
                 optional = true
         )
@@ -372,7 +363,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Standard deviation of log mean bias.",
-                fullName = "logMeanBiasStandardDeviation",
+                fullName = "log-mean-bias-standard-deviation",
                 minValue = 0.,
                 optional = true
         )
@@ -380,7 +371,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Initial value of ARD prior precision relative to the typical interval-specific unexplained variance scale.",
-                fullName = "initARDRelUnexplainedVariance",
+                fullName = "init-ard-rel-unexplained-variance",
                 minValue = 0.,
                 optional = true
         )
@@ -388,7 +379,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Number of knobs on the GC curves.",
-                fullName = "numGCBins",
+                fullName = "num-gc-bins",
                 minValue = 1,
                 optional = true
         )
@@ -396,7 +387,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Prior standard deviation of the GC curve from flat.",
-                fullName = "gcCurveStandardDeviation",
+                fullName = "gc-curve-standard-deviation",
                 minValue = 0.,
                 optional = true
         )
@@ -404,14 +395,14 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "The strategy for calculating copy number posterior expectations in the denoising model.",
-                fullName = "gcExpectationMode",
+                fullName = "copy-number-posterior-expectation-mode",
                 optional = true
         )
-        private GCExpectationMode gcExpectationMode = GCExpectationMode.HYBRID;
+        private CopyNumberPosteriorExpectationMode copyNumberPosteriorExpectationMode = CopyNumberPosteriorExpectationMode.HYBRID;
 
         @Argument(
                 doc = "Enable discovery of bias factors.",
-                fullName = "enableBiasFactors",
+                fullName = "enable-bias-factors",
                 optional = true
         )
         private boolean enableBiasFactors = true;
@@ -421,7 +412,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
                     String.format("--psi_s_scale=%f", samplePsiScale),
                     String.format("--mapping_error_rate=%f", mappingErrorRate),
                     String.format("--depth_correction_tau=%f", depthCorrectionTau),
-                    String.format("--q_c_expectation_mode=%s", gcExpectationMode.pythonArgumentString)));
+                    String.format("--q_c_expectation_mode=%s", copyNumberPosteriorExpectationMode.pythonArgumentString)));
             if (mode == Mode.COHORT) {
                 arguments.addAll(Arrays.asList(
                         String.format("--max_bias_factors=%d", maxBiasFactors),
@@ -443,7 +434,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Prior probability of alt copy number with respect to contig baseline state in the reference copy number.",
-                fullName = "pAlt",
+                fullName = "p-alt",
                 minValue = 0.,
                 optional = true
         )
@@ -451,7 +442,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Coherence length of CNV events (in the units of bp).",
-                fullName = "cnvCoherenceLength",
+                fullName = "cnv-coherence-length",
                 minValue = 0.,
                 optional = true
         )
@@ -459,7 +450,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Coherence length of copy number classes (in the units of bp).",
-                fullName = "classCoherenceLength",
+                fullName = "class-coherence-length",
                 minValue = 0.,
                 optional = true
         )
@@ -467,7 +458,7 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
         @Argument(
                 doc = "Highest considered copy number.",
-                fullName = "maxCopyNumber",
+                fullName = "max-copy-number",
                 minValue = 0,
                 optional = true
         )

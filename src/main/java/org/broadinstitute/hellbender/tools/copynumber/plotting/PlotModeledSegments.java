@@ -98,8 +98,7 @@ public final class PlotModeledSegments extends CommandLineProgram {
 
     @Argument(
             doc = "Prefix for output filenames.",
-            fullName =  CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME,
-            shortName = CopyNumberStandardArgument.OUTPUT_PREFIX_SHORT_NAME
+            fullName =  CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME
     )
     private String outputPrefix;
 
