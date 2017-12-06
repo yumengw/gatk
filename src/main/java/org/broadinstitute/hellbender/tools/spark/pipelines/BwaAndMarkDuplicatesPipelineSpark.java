@@ -61,7 +61,7 @@ public final class BwaAndMarkDuplicatesPipelineSpark extends GATKSparkTool {
             final JavaRDD<GATKRead> markedReads = MarkDuplicatesSpark.cleanupTemporaryAttributes(markedReadsWithOD);
             try {
                 ReadsSparkSink.writeReads(ctx, output,
-                        referenceArguments.getReferencePath().toFile().getAbsolutePath(),
+                        referenceArguments.getReferencePath().toUri().toString(),
                         markedReads, engine.getHeader(),
                         shardedOutput ? ReadsWriteFormat.SHARDED : ReadsWriteFormat.SINGLE,
                         getRecommendedNumReducers());
