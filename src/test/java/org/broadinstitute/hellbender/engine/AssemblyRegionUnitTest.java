@@ -397,7 +397,7 @@ public final class AssemblyRegionUnitTest extends GATKBaseTest {
     @Test
     public void testCreateFromReadShard() {
         final Path testBam = IOUtils.getPath(NA12878_20_21_WGS_bam);
-        final File reference = new File(b37_reference_20_21);
+        final Path reference = IOUtils.getPath(b37_reference_20_21);
         final SimpleInterval shardInterval = new SimpleInterval("20", 10000000, 10001000);
         final SimpleInterval paddedShardInterval = new SimpleInterval(shardInterval.getContig(), shardInterval.getStart() - 100, shardInterval.getEnd() + 100);
 

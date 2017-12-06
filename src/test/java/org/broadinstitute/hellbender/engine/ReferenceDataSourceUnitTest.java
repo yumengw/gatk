@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.GATKBaseTest;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -18,21 +19,21 @@ import java.util.List;
 
 public final class ReferenceDataSourceUnitTest extends GATKBaseTest {
 
-    private static final File TEST_REFERENCE = new File(hg19MiniReference);
+    private static final Path TEST_REFERENCE = IOUtils.getPath(hg19MiniReference);
 
     @Test(expectedExceptions = UserException.class)
     public void testNonExistentReference() {
-        new ReferenceFileSource(GATKBaseTest.getSafeNonExistentFile("nonexistent.fasta"));
+        new ReferenceFileSource(GATKBaseTest.getSafeNonExistentPath("nonexistent.fasta"));
     }
 
     @Test(expectedExceptions = UserException.MissingReferenceFaiFile.class)
     public void testReferenceWithMissingFaiFile() {
-        ReferenceDataSource refDataSource = new ReferenceFileSource(new File(publicTestDir + "fastaWithoutFai.fasta"));
+        ReferenceDataSource refDataSource = new ReferenceFileSource(IOUtils.getPath(publicTestDir + "fastaWithoutFai.fasta"));
     }
 
     @Test(expectedExceptions = UserException.MissingReferenceDictFile.class)
     public void testReferenceWithMissingDictFile() {
-        ReferenceDataSource refDataSource = new ReferenceFileSource(new File(publicTestDir + "fastaWithoutDict.fasta"));
+        ReferenceDataSource refDataSource = new ReferenceFileSource(IOUtils.getPath(publicTestDir + "fastaWithoutDict.fasta"));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

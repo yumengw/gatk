@@ -41,17 +41,6 @@ public final class ReferenceFileSource implements ReferenceDataSource {
     }
 
     /**
-     * Initialize this data source using a fasta file.
-     *
-     * The provided fasta file must have companion .fai and .dict files.
-     *
-     * @param fastaFile reference fasta file
-     */
-    public ReferenceFileSource(final File fastaFile) {
-        this(Utils.nonNull(fastaFile).toPath());
-    }
-
-    /**
      * Start an iteration over the entire reference. Not yet supported!
      *
      * See the BaseUtils class for guidance on how to work with bases in this format.
