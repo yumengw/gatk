@@ -181,14 +181,14 @@ task GermlineCNVCallerCohortMode {
         mkdir ${output_dir_}
         GATK_JAR=${default="/root/gatk.jar" gatk4_jar_override}
 
-        mkdir contig-ploidy-calls
-        tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls
+        mkdir contig-ploidy-calls-dir
+        tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls-dir
 
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
             --run-mode COHORT \
             -L ${intervals} \
             --input ${sep=" --input " read_count_files} \
-            --contig-ploidy-calls contig-ploidy-calls \
+            --contig-ploidy-calls contig-ploidy-calls-dir \
             ${"--annotated-intervals " + annotated_intervals} \
             --interval_merging_rule OVERLAPPING_ONLY \
             --output ${output_dir_} \

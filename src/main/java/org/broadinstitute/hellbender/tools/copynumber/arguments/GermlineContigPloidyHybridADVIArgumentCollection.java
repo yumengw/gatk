@@ -6,6 +6,7 @@ import java.util.EnumMap;
  * @author Mehrtash Babadi &lt;mehrtash@broadinstitute.org&gt;
  */
 public final class GermlineContigPloidyHybridADVIArgumentCollection extends HybridADVIArgumentCollection {
+    private static final long serialVersionUID = 1L;
 
     private static final EnumMap<HybridADVIArgument, Object> defaultValue = new EnumMap<>(HybridADVIArgument.class);
     static {

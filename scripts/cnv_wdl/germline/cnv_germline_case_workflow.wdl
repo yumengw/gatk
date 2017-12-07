@@ -156,8 +156,8 @@ task GermlineCNVCallerCaseMode {
         mkdir ${output_dir_}
         GATK_JAR=${default="/root/gatk.jar" gatk4_jar_override}
 
-        mkdir contig-ploidy-calls
-        tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls
+        mkdir contig-ploidy-calls-dir
+        tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls-dir
 
         mkdir gcnv-model
         tar xzf ${gcnv_model_tar} -C gcnv-model
@@ -165,7 +165,7 @@ task GermlineCNVCallerCaseMode {
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
             --run-mode CASE \
             --input ${sep=" --input " read_count_files} \
-            --contig-ploidy-calls contig-ploidy-calls \
+            --contig-ploidy-calls contig-ploidy-calls-dir \
             --model gcnv-model \
             --output ${output_dir_} \
             --output-prefix case \
