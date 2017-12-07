@@ -49,44 +49,34 @@ def write_sample_coverage_metadata(sample_metadata_collection: SampleMetadataCol
 
 
 def read_sample_coverage_metadata(sample_metadata_collection: SampleMetadataCollection,
-                                  input_file: str) -> List[str]:
+                                  input_file: str,
+                                  comment='@',
+                                  delimiter='\t') -> List[str]:
     """Reads sample coverage metadata from a .tsv file and adds them to `sample_metadata_collection`.
 
     Args:
         sample_metadata_collection: collection to which the coverage metadata is to be added
         input_file: input sample coverage metadata .tsv file
+        comment: comment character
+        delimiter: delimiter character
 
     Returns:
         list of samples in the same order as encountered in `input_file`
     """
-    with open(input_file, 'r') as tsv_file:
-        reader = csv.reader(tsv_file, delimiter='\t')
-        row_num = 0
-        contig_list = None
-        num_header_elems = None
-        num_contigs = None
-        sample_names = []
-        for row in reader:
-            row_num += 1
-            if row_num == 1:  # header
-                num_header_elems = len(row)
-                assert num_header_elems > 1, \
-                    "Malformed sample coverage metadata file: not enough columns"
-                assert row[0] == io_consts.sample_name_column_name, \
-                    "Malformed sample ploidy metadata file; first column found: " \
-                    "\"{0}\", expected: \"{1}\"".format(row[0], io_consts.sample_name_column_name)
-                num_contigs = num_header_elems - 1
-                contig_list = row[1:]
-                continue
-
-            assert len(row) == num_header_elems, \
-                "Malformed sample coverage metadata file; row {0} has wrong number of entries; " \
-                "found: {1}, expected: {2}".format(row_num, len(row), num_header_elems)
-            sample_name = row[0]
-            n_j = np.asarray([int(row[k + 1]) for k in range(num_contigs)], dtype=types.big_uint)
-            sample_metadata_collection.add_sample_coverage_metadata(SampleCoverageMetadata(
-                sample_name, n_j, contig_list))
-            sample_names.append(sample_name)
+    coverage_metadata_pd = pd.read_csv(input_file, delimiter=delimiter, comment=comment)
+    found_columns_list = [str(column) for column in coverage_metadata_pd.columns.values]
+    io_commons.assert_mandatory_columns({io_consts.sample_name_column_name}, set(found_columns_list), input_file)
+    contig_list = found_columns_list.copy()
+    contig_list.remove(io_consts.sample_name_column_name)
+    num_contigs = len(contig_list)
+    sample_names = []
+    for tup in zip(coverage_metadata_pd[io_consts.sample_name_column_name],
+                   *(coverage_metadata_pd[contig] for contig in contig_list)):
+        sample_name = str(tup[0])
+        n_j = np.asarray([int(tup[k + 1]) for k in range(num_contigs)], dtype=types.big_uint)
+        sample_metadata_collection.add_sample_coverage_metadata(SampleCoverageMetadata(
+            sample_name, n_j, contig_list))
+        sample_names.append(sample_name)
 
     return sample_names
 
