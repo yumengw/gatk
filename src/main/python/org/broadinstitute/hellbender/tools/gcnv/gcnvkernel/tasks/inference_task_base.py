@@ -602,6 +602,14 @@ class HybridInferenceParameters:
                 kwargs['default'] = initializer_params[arg].default
             group.add_argument(full_arg, **kwargs)
 
+        def str_to_bool(value: str):
+            if value.lower() in ('yes', 'true', 't', 'y', '1'):
+                return True
+            elif value.lower() in ('no', 'false', 'f', 'n', '0'):
+                return False
+            else:
+                raise argparse.ArgumentTypeError('Boolean value expected.')
+
         process_and_maybe_add("learning_rate",
                               type=float,
                               help="Adamax optimizer learning rate")
@@ -677,15 +685,15 @@ class HybridInferenceParameters:
                                    "using more of the new posterior)")
 
         process_and_maybe_add("disable_sampler",
-                              type=bool,
+                              type=str_to_bool,
                               help="(advanced) Disable sampler")
 
         process_and_maybe_add("disable_caller",
-                              type=bool,
+                              type=str_to_bool,
                               help="(advanced) Disable caller")
 
         process_and_maybe_add("disable_annealing",
-                              type=bool,
+                              type=str_to_bool,
                               help="(advanced) Keep the temperature pinned at its initial value and disable annealing")
 
     @staticmethod

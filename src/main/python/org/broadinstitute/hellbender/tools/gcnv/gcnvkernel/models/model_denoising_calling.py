@@ -93,6 +93,14 @@ class DenoisingModelConfig:
             kwargs['default'] = initializer_params[arg].default
             group.add_argument(full_arg, **kwargs)
 
+        def str_to_bool(value: str):
+            if value.lower() in ('yes', 'true', 't', 'y', '1'):
+                return True
+            elif value.lower() in ('no', 'false', 'f', 'n', '0'):
+                return False
+            else:
+                raise argparse.ArgumentTypeError('Boolean value expected.')
+
         process_and_maybe_add("max_bias_factors",
                               type=int,
                               help="Maximum number of bias factors")
@@ -146,16 +154,16 @@ class DenoisingModelConfig:
                                    "higher sensitivity in detecting common CNVs and to avoid boundary artifacts")
 
         process_and_maybe_add("enable_bias_factors",
-                              type=bool,
+                              type=str_to_bool,
                               help="Enable discovery of novel bias factors")
 
         process_and_maybe_add("enable_explicit_gc_bias_modeling",
-                              type=bool,
+                              type=str_to_bool,
                               help="Enable explicit modeling of GC bias (if enabled, the provided modeling interval "
                                    "list of contain a column for {0} values)".format(GCContentAnnotation.get_key()))
 
         process_and_maybe_add("disable_bias_factors_in_active_class",
-                              type=bool,
+                              type=str_to_bool,
                               help="Disable novel bias factor discovery CNV-active regions")
 
     @staticmethod
@@ -233,6 +241,14 @@ class CopyNumberCallingConfig:
             kwargs['default'] = initializer_params[arg].default
             group.add_argument(full_arg, **kwargs)
 
+        def str_to_bool(value: str):
+            if value.lower() in ('yes', 'true', 't', 'y', '1'):
+                return True
+            elif value.lower() in ('no', 'false', 'f', 'n', '0'):
+                return False
+            else:
+                raise argparse.ArgumentTypeError('Boolean value expected.')
+
         process_and_maybe_add("p_alt",
                               type=float,
                               help="Prior probability of alternate copy number with respect to contig baseline "
@@ -255,7 +271,7 @@ class CopyNumberCallingConfig:
                               help="Highest called copy number state")
 
         process_and_maybe_add("initialize_to_active_class",
-                              type=bool,
+                              type=str_to_bool,
                               help="Initialize all intervals as CNV-active")
 
         process_and_maybe_add("num_calling_processes",

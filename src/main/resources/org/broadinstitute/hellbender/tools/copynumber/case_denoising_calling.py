@@ -132,7 +132,7 @@ def update_args_dict_from_exported_model(input_model_path: str,
 
     if _args_dict['enable_bias_factors']:
         logging.info("- maximum number of bias factors: "
-                     + repr(_args_dict['enable_bias_factors']))
+                     + repr(_args_dict['max_bias_factors']))
 
     if _args_dict['enable_explicit_gc_bias_modeling']:
         logging.info("- number of GC curve knobs: "
