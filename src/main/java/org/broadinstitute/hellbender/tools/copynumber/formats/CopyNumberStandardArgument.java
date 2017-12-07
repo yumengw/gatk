@@ -1,8 +1,7 @@
 package org.broadinstitute.hellbender.tools.copynumber.formats;
 
 public final class CopyNumberStandardArgument {
-    public static final String ANNOTATED_INTERVALS_FILE_LONG_NAME = "annotatedIntervals";
-    public static final String ANNOTATED_INTERVALS_FILE_SHORT_NAME = "annot";
+    public static final String ANNOTATED_INTERVALS_FILE_LONG_NAME = "annotated-intervals";
 
     public static final String READ_COUNT_PANEL_OF_NORMALS_FILE_LONG_NAME = "readCountPanelOfNormals";
     public static final String READ_COUNT_PANEL_OF_NORMALS_FILE_SHORT_NAME = "rcPON";
@@ -28,5 +27,4 @@ public final class CopyNumberStandardArgument {
     public static final String OUTPUT_PREFIX_LONG_NAME = "output-prefix";
 
     public static final String MODEL_LONG_NAME = "model";
-    public static final String MODEL_SHORT_NAME = "M";
 }

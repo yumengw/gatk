@@ -111,7 +111,7 @@ task DetermineGermlineContigPloidyCaseMode {
             --input ${sep=" --input " read_count_files} \
             --model input-contig-ploidy-model \
             --output ${output_dir_} \
-            --outputPrefix case \
+            --output-prefix case \
             --verbosity DEBUG
 
         tar czf case-contig-ploidy-calls.tar.gz -C ${output_dir_}/case-calls .
@@ -163,12 +163,12 @@ task GermlineCNVCallerCaseMode {
         tar xzf ${gcnv_model_tar} -C gcnv-model
 
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
-            --runMode CASE \
+            --run-mode CASE \
             --input ${sep=" --input " read_count_files} \
-            --contigPloidyCalls contig-ploidy-calls \
+            --contig-ploidy-calls contig-ploidy-calls \
             --model gcnv-model \
             --output ${output_dir_} \
-            --outputPrefix case \
+            --output-prefix case \
             --verbosity DEBUG
 
         tar czf case-gcnv-calls-${scatter_index}.tar.gz -C ${output_dir_}/case-calls .

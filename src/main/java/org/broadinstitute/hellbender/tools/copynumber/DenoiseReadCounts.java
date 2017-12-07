@@ -65,7 +65,6 @@ public final class DenoiseReadCounts extends CommandLineProgram {
                     "Intervals must be identical to and in the same order as those in the input read-count file.  " +
                     "If a panel of normals is provided, this input will be ignored.",
             fullName = CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_LONG_NAME,
-            shortName = CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_SHORT_NAME,
             optional = true
     )
     private File annotatedIntervalsFile = null;

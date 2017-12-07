@@ -132,9 +132,9 @@ task DetermineGermlineContigPloidyCohortMode {
 
         java -Xmx${machine_mem}g -jar $GATK_JAR DetermineGermlineContigPloidy \
             --input ${sep=" --input " read_count_files} \
-            --contigPloidyPriors ${contig_ploidy_priors} \
+            --contig-ploidy-priors ${contig_ploidy_priors} \
             --output ${output_dir_} \
-            --outputPrefix ${cohort_entity_id} \
+            --output-prefix ${cohort_entity_id} \
             --verbosity DEBUG
 
         tar czf ${cohort_entity_id}-contig-ploidy-model.tar.gz -C ${output_dir_}/${cohort_entity_id}-model .
@@ -185,14 +185,14 @@ task GermlineCNVCallerCohortMode {
         tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls
 
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
-            --runMode COHORT \
+            --run-mode COHORT \
             -L ${intervals} \
             --input ${sep=" --input " read_count_files} \
-            --contigPloidyCalls contig-ploidy-calls \
-            ${"--annotatedIntervals " + annotated_intervals} \
+            --contig-ploidy-calls contig-ploidy-calls \
+            ${"--annotated-intervals " + annotated_intervals} \
             --interval_merging_rule OVERLAPPING_ONLY \
             --output ${output_dir_} \
-            --outputPrefix ${cohort_entity_id} \
+            --output-prefix ${cohort_entity_id} \
             --verbosity DEBUG
 
         tar czf ${cohort_entity_id}-gcnv-model-${scatter_index}.tar.gz -C ${output_dir_}/${cohort_entity_id}-model .

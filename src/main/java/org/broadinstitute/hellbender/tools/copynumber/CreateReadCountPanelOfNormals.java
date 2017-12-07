@@ -106,7 +106,6 @@ public final class CreateReadCountPanelOfNormals extends SparkCommandLineProgram
                     "If provided, explicit GC correction will be performed before performing SVD.  " +
                     "Intervals must be identical to and in the same order as those in the input read-count files.",
             fullName = CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_LONG_NAME,
-            shortName = CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_SHORT_NAME,
             optional = true
     )
     private File annotatedIntervalsFile = null;

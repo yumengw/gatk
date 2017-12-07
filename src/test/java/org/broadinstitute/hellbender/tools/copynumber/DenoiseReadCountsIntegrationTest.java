@@ -39,7 +39,7 @@ public final class DenoiseReadCountsIntegrationTest extends CommandLineProgramTe
                         final ArgumentsBuilder arguments = new ArgumentsBuilder()
                                 .addFileArgument(StandardArgumentDefinitions.INPUT_SHORT_NAME, inputReadCountsFile);
                         if (annotatedIntervalsFile != null) {
-                            arguments.addFileArgument(CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_SHORT_NAME, annotatedIntervalsFile);
+                            arguments.addFileArgument(CopyNumberStandardArgument.ANNOTATED_INTERVALS_FILE_LONG_NAME, annotatedIntervalsFile);
                         }
                         if (ponFile != null) {
                             arguments.addFileArgument(CopyNumberStandardArgument.READ_COUNT_PANEL_OF_NORMALS_FILE_SHORT_NAME, ponFile);
