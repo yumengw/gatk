@@ -11,5 +11,9 @@
   "CNVGermlineCaseWorkflow.PreprocessIntervals.bin_length": "20000",
   "CNVGermlineCaseWorkflow.ref_fasta_dict": "/home/travis/build/broadinstitute/gatk/src/test/resources/large/cnv_germline_workflows_test_files/Homo_sapiens_assembly19.truncated.dict",
   "CNVGermlineCaseWorkflow.ref_fasta_fai": "/home/travis/build/broadinstitute/gatk/src/test/resources/large/cnv_germline_workflows_test_files/Homo_sapiens_assembly19.truncated.fasta.fai",
-  "CNVGermlineCaseWorkflow.ref_fasta": "/home/travis/build/broadinstitute/gatk/src/test/resources/large/cnv_germline_workflows_test_files/Homo_sapiens_assembly19.truncated.fasta"
+  "CNVGermlineCaseWorkflow.ref_fasta": "/home/travis/build/broadinstitute/gatk/src/test/resources/large/cnv_germline_workflows_test_files/Homo_sapiens_assembly19.truncated.fasta",
+  "CNVGermlineCaseWorkflow.gcnv_initial_temperature": 1.0,
+  "CNVGermlineCaseWorkflow.gcnv_disable_annealing": true,
+  "CNVGermlineCaseWorkflow.gcnv_min_training_epochs": 1,
+  "CNVGermlineCaseWorkflow.gcnv_max_training_epochs": 5
 }
