@@ -49,8 +49,8 @@ public final class GermlineCallingArgumentCollection implements Serializable {
 
     public List<String> generatePythonArguments(final GermlineCNVCaller.RunMode runMode) {
         final List<String> arguments = new ArrayList<>(Arrays.asList(
-                String.format("--p_alt=%f", pAlt),
-                String.format("--cnv_coherence_length=%f", cnvCoherenceLength),
+                String.format("--p_alt=%e", pAlt),
+                String.format("--cnv_coherence_length=%e", cnvCoherenceLength),
                 String.format("--max_copy_number=%d", maxCopyNumber)));
         if (runMode == GermlineCNVCaller.RunMode.COHORT) {
             arguments.addAll(Collections.singletonList(

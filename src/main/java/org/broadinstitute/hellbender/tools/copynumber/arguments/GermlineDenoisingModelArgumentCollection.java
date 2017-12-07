@@ -115,18 +115,18 @@ public final class GermlineDenoisingModelArgumentCollection implements Serializa
 
     public List<String> generatePythonArguments(final GermlineCNVCaller.RunMode runMode) {
         final List<String> arguments = new ArrayList<>(Arrays.asList(
-                String.format("--psi_s_scale=%f", samplePsiScale),
-                String.format("--mapping_error_rate=%f", mappingErrorRate),
-                String.format("--depth_correction_tau=%f", depthCorrectionTau),
+                String.format("--psi_s_scale=%e", samplePsiScale),
+                String.format("--mapping_error_rate=%e", mappingErrorRate),
+                String.format("--depth_correction_tau=%e", depthCorrectionTau),
                 String.format("--q_c_expectation_mode=%s", copyNumberPosteriorExpectationMode.pythonArgumentString)));
         if (runMode == GermlineCNVCaller.RunMode.COHORT) {
             arguments.addAll(Arrays.asList(
                     String.format("--max_bias_factors=%d", maxBiasFactors),
-                    String.format("--psi_t_scale=%f", intervalPsiScale),
-                    String.format("--log_mean_bias_std=%f", logMeanBiasStandardDeviation),
-                    String.format("--init_ard_rel_unexplained_variance=%f", initARDRelUnexplainedVariance),
+                    String.format("--psi_t_scale=%e", intervalPsiScale),
+                    String.format("--log_mean_bias_std=%e", logMeanBiasStandardDeviation),
+                    String.format("--init_ard_rel_unexplained_variance=%e", initARDRelUnexplainedVariance),
                     String.format("--num_gc_bins=%d", numGCBins),
-                    String.format("--gc_curve_sd=%f", gcCurveStandardDeviation)));
+                    String.format("--gc_curve_sd=%e", gcCurveStandardDeviation)));
             if (enableBiasFactors) {
                 arguments.add("--enable_bias_factors=True");
             }

@@ -12,6 +12,7 @@ import org.broadinstitute.hellbender.cmdline.argumentcollections.IntervalArgumen
 import org.broadinstitute.hellbender.cmdline.argumentcollections.OptionalIntervalArgumentCollection;
 import org.broadinstitute.hellbender.cmdline.programgroups.CopyNumberProgramGroup;
 import org.broadinstitute.hellbender.exceptions.UserException;
+import org.broadinstitute.hellbender.tools.copynumber.arguments.GermlineCNVHybridADVIArgumentCollection;
 import org.broadinstitute.hellbender.tools.copynumber.arguments.GermlineCallingArgumentCollection;
 import org.broadinstitute.hellbender.tools.copynumber.arguments.GermlineDenoisingModelArgumentCollection;
 import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberArgumentValidationUtils;
@@ -96,7 +97,8 @@ public final class GermlineCNVCaller extends CommandLineProgram {
     public static final String COHORT_DENOISING_CALLING_PYTHON_SCRIPT = "cohort_denoising_calling.py";
     public static final String CASE_SAMPLE_CALLING_PYTHON_SCRIPT = "case_denoising_calling.py";
 
-    public static final String INPUT_MODEL_INTERVAL_FILE = "interval_list.tsv";     //name of the interval file output by the python code in the model directory
+    //name of the interval file output by the python code in the model directory
+    public static final String INPUT_MODEL_INTERVAL_FILE = "interval_list.tsv";
 
     public static final String MODEL_PATH_SUFFIX = "-model";
     public static final String CALLS_PATH_SUFFIX = "-calls";
@@ -156,30 +158,9 @@ public final class GermlineCNVCaller extends CommandLineProgram {
     )
     private String outputDir;
 
-
-
-
-
-
-
-
-
-
-    /* TODO up to here */
-
-
-
-
-
-
-
-
-
-
-
-
     @ArgumentCollection
-    protected IntervalArgumentCollection intervalArgumentCollection = new OptionalIntervalArgumentCollection();
+    protected IntervalArgumentCollection intervalArgumentCollection
+            = new OptionalIntervalArgumentCollection();
 
     @Advanced
     @ArgumentCollection
@@ -188,16 +169,23 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
     @Advanced
     @ArgumentCollection
-    private GermlineCallingArgumentCollection germlineCallingArgumentCollection = new GermlineCallingArgumentCollection();
+    private GermlineCallingArgumentCollection germlineCallingArgumentCollection
+            = new GermlineCallingArgumentCollection();
+
+    @Advanced
+    @ArgumentCollection
+    private GermlineCNVHybridADVIArgumentCollection germlineCNVHybridADVIArgumentCollection
+            = new GermlineCNVHybridADVIArgumentCollection();
 
     private SimpleIntervalCollection specifiedIntervals;
     private File specifiedIntervalsFile;
 
     @Override
     protected Object doWork() {
-        setModeAndValidateArguments();
+        validateArguments();
 
-        //read in count files, validate they contain specified subset of intervals, and output count files for these intervals to temporary files
+        //read in count files, validate they contain specified subset of intervals, and output
+        //count files for these intervals to temporary files
         final List<File> intervalSubsetReadCountFiles = writeIntervalSubsetReadCountFiles();
 
         //call python inference code
@@ -212,71 +200,84 @@ public final class GermlineCNVCaller extends CommandLineProgram {
         return "SUCCESS";
     }
 
-    private void setModeAndValidateArguments() {
+    private void validateArguments() {
         inputReadCountFiles.forEach(IOUtils::canReadFile);
+        Utils.validateArg(inputReadCountFiles.size() == new HashSet<>(inputReadCountFiles).size(),
+                "List of input read-count files cannot contain duplicates.");
 
         if (inputModelDir != null) {
             Utils.validateArg(new File(inputModelDir).exists(),
                     String.format("Input denoising-model directory %s does not exist.", inputModelDir));
         }
 
-        //get sequence dictionary and intervals from the first read-count file to use to validate remaining files
-        //(this first file is read again below, which is slightly inefficient but is probably not worth the extra code)
-        final File firstReadCountFile = inputReadCountFiles.get(0);
-        final SimpleCountCollection firstReadCounts = SimpleCountCollection.read(firstReadCountFile);
-        final SAMSequenceDictionary sequenceDictionary = firstReadCounts.getMetadata().getSequenceDictionary();
-        final LocatableMetadata metadata = new SimpleLocatableMetadata(sequenceDictionary);
-
-        if (inputReadCountFiles.size() > 1) {
-            logger.info("Multiple samples were provided, running in cohort runMode...");
-            runMode = RunMode.COHORT;
-
-            Utils.validateArg(inputReadCountFiles.size() == new HashSet<>(inputReadCountFiles).size(),
-                    "List of input read-count files cannot contain duplicates.");
+        if (inputModelDir != null) {
+            //intervals are retrieved from the input model directory
+            specifiedIntervalsFile = new File(inputModelDir, INPUT_MODEL_INTERVAL_FILE);
+            IOUtils.canReadFile(specifiedIntervalsFile);
+            specifiedIntervals = new SimpleIntervalCollection(specifiedIntervalsFile);
+        } else {
+            //get sequence dictionary and intervals from the first read-count file to use to validate remaining files
+            //(this first file is read again below, which is slightly inefficient but is probably not worth the extra code)
+            final File firstReadCountFile = inputReadCountFiles.get(0);
+            final SimpleCountCollection firstReadCounts = SimpleCountCollection.read(firstReadCountFile);
+            final SAMSequenceDictionary sequenceDictionary = firstReadCounts.getMetadata().getSequenceDictionary();
+            final LocatableMetadata metadata = new SimpleLocatableMetadata(sequenceDictionary);
 
             if (intervalArgumentCollection.intervalsSpecified()) {
                 logger.info("Intervals specified...");
                 CopyNumberArgumentValidationUtils.validateIntervalArgumentCollection(intervalArgumentCollection);
-                specifiedIntervals = new SimpleIntervalCollection(metadata, intervalArgumentCollection.getIntervals(sequenceDictionary));
+                specifiedIntervals = new SimpleIntervalCollection(metadata,
+                        intervalArgumentCollection.getIntervals(sequenceDictionary));
             } else {
-                logger.info(String.format("Retrieving intervals from first read-count file (%s)...", firstReadCountFile));
+                logger.info(String.format("Retrieving intervals from first read-count file (%s)...",
+                        firstReadCountFile));
                 specifiedIntervals = new SimpleIntervalCollection(metadata, firstReadCounts.getIntervals());
             }
 
-            specifiedIntervalsFile = IOUtils.createTempFile("intervals", ".tsv");    //in cohort runMode, intervals are specified via -L; we write them to a temporary file
+            //in cohort runMode, intervals are specified via -L; we write them to a temporary file
+            specifiedIntervalsFile = IOUtils.createTempFile("intervals", ".tsv");
             //get GC content (null if not provided)
-            final AnnotatedIntervalCollection subsetAnnotatedIntervals = CopyNumberArgumentValidationUtils.validateAnnotatedIntervalsSubset(
-                    inputAnnotatedIntervalsFile, specifiedIntervals, logger);
+            final AnnotatedIntervalCollection subsetAnnotatedIntervals =
+                    CopyNumberArgumentValidationUtils.validateAnnotatedIntervalsSubset(
+                            inputAnnotatedIntervalsFile, specifiedIntervals, logger);
             if (subsetAnnotatedIntervals != null) {
                 subsetAnnotatedIntervals.write(specifiedIntervalsFile);
             } else {
                 specifiedIntervals.write(specifiedIntervalsFile);
             }
-        } else {
-            logger.info("A single sample was provided, running in case runMode...");
-            runMode = RunMode.CASE;
+        }
 
+        if (runMode.equals(RunMode.COHORT)) {
+            logger.info("Running the tool in the COHORT mode...");
+            Utils.validateArg(inputReadCountFiles.size() > 1, "At least two samples must be provided in the " +
+                    "COHORT mode");
+            if (inputModelDir != null) {
+                logger.info("(advanced feature) A denoising-model directory is provided in the COHORT run mode; " +
+                        "using the model for initialization and ignoring specified and/or annotated intervals.");
+            }
+        } else { // case run-mode
+            logger.info("Running the tool in the CASE mode...");
+            Utils.validateArg(inputModelDir != null, "An input denoising-model directory must be provided in the " +
+                    "CASE run-mode.");
             if (intervalArgumentCollection.intervalsSpecified()) {
-                throw new UserException.BadInput("Invalid combination of inputs: Running in case runMode, but intervals were provided.");
+                throw new UserException.BadInput("Invalid combination of inputs: Running in CASE run-mode, " +
+                        "but intervals were provided.");
             }
-
             if (inputAnnotatedIntervalsFile != null) {
-                throw new UserException.BadInput("Invalid combination of inputs: Running in case runMode, but annotated intervals were provided.");
+                throw new UserException.BadInput("Invalid combination of inputs: Running in CASE run-mode," +
+                        "but annotated intervals were provided.");
             }
-
-            Utils.nonNull(inputModelDir, "An input denoising-model directory must be provided in case runMode.");
-
-            specifiedIntervalsFile = new File(inputModelDir, INPUT_MODEL_INTERVAL_FILE);             //in case runMode, intervals are specified via a file in the input model directory
-            IOUtils.canReadFile(specifiedIntervalsFile);
-            specifiedIntervals = new SimpleIntervalCollection(specifiedIntervalsFile);
         }
 
         Utils.nonNull(outputPrefix);
-        Utils.validateArg(new File(inputContigPloidyCallsDir).exists(), String.format("Input contig-ploidy calls directory %s does not exist.", inputContigPloidyCallsDir));
-        Utils.validateArg(new File(outputDir).exists(), String.format("Output directory %s does not exist.", outputDir));
+        Utils.validateArg(new File(inputContigPloidyCallsDir).exists(),
+                String.format("Input contig-ploidy calls directory %s does not exist.", inputContigPloidyCallsDir));
+        Utils.validateArg(new File(outputDir).exists(),
+                String.format("Output directory %s does not exist.", outputDir));
 
         germlineCallingArgumentCollection.validate();
         germlineDenoisingModelArgumentCollection.validate();
+        germlineCNVHybridADVIArgumentCollection.validate();
     }
 
     private List<File> writeIntervalSubsetReadCountFiles() {
@@ -289,12 +290,16 @@ public final class GermlineCNVCaller extends CommandLineProgram {
         while (inputReadCountFilesIterator.hasNext()) {
             final int sampleIndex = inputReadCountFilesIterator.nextIndex();
             final File inputReadCountFile = inputReadCountFilesIterator.next();
-            logger.info(String.format("Aggregating read-count file %s (%d / %d)", inputReadCountFile, sampleIndex + 1, numSamples));
+            logger.info(String.format("Aggregating read-count file %s (%d / %d)",
+                    inputReadCountFile, sampleIndex + 1, numSamples));
             final SimpleCountCollection readCounts = SimpleCountCollection.read(inputReadCountFile);
-            Utils.validateArg(readCounts.getMetadata().getSequenceDictionary().isSameDictionary(specifiedIntervals.getMetadata().getSequenceDictionary()),
-                    String.format("Sequence dictionary for read-count file %s does not match those in other read-count files.", inputReadCountFile));
+            Utils.validateArg(readCounts.getMetadata().getSequenceDictionary()
+                            .isSameDictionary(specifiedIntervals.getMetadata().getSequenceDictionary()),
+                    String.format("Sequence dictionary for read-count file %s does not match those in " +
+                            "other read-count files.", inputReadCountFile));
             Utils.validateArg(new HashSet<>(readCounts.getIntervals()).containsAll(intervalSubset),
-                    String.format("Intervals for read-count file %s do not contain all specified intervals.", inputReadCountFile));
+                    String.format("Intervals for read-count file %s do not contain all specified intervals.",
+                            inputReadCountFile));
             final File intervalSubsetReadCountFile = IOUtils.createTempFile("sample-" + sampleIndex, ".tsv");
             new SimpleCountCollection(
                     readCounts.getMetadata(),
@@ -308,34 +313,41 @@ public final class GermlineCNVCaller extends CommandLineProgram {
 
     private boolean executeGermlineCNVCallerPythonScript(final List<File> intervalSubsetReadCountFiles) {
         final PythonScriptExecutor executor = new PythonScriptExecutor(true);
-        final String outputDirArg = Utils.nonEmpty(outputDir).endsWith(File.separator) ? outputDir : outputDir + File.separator;    //add trailing slash if necessary
+        final String outputDirArg = Utils.nonEmpty(outputDir).endsWith(File.separator)
+                ? outputDir
+                : outputDir + File.separator;    //add trailing slash if necessary
 
         //add required arguments
         final List<String> arguments = new ArrayList<>(Arrays.asList(
                 "--ploidy_calls_path=" + inputContigPloidyCallsDir,
                 "--output_calls_path=" + outputDirArg + outputPrefix + CALLS_PATH_SUFFIX));
-        arguments.addAll(germlineDenoisingModelArgumentCollection.generatePythonArguments(runMode));
-        arguments.addAll(germlineCallingArgumentCollection.generatePythonArguments(runMode));
+
+        //if a model path is given, add it to the argument (both COHORT and CASE modes)
+        if (inputModelDir != null) {
+            arguments.add("--input_model_path=" + inputModelDir);
+        }
+
+        final String script;
+        if (runMode == RunMode.COHORT) {
+            script = COHORT_DENOISING_CALLING_PYTHON_SCRIPT;
+            //these are the annotated intervals, if provided
+            arguments.add("--modeling_interval_list=" + specifiedIntervalsFile.getAbsolutePath());
+            arguments.add("--output_model_path=" + outputDirArg + outputPrefix + MODEL_PATH_SUFFIX);
+        } else {
+            script = CASE_SAMPLE_CALLING_PYTHON_SCRIPT;
+        }
 
         if (inputAnnotatedIntervalsFile != null) {
             arguments.add("--enable_explicit_gc_bias_modeling=True");
         }
 
         arguments.add("--read_count_tsv_files");
-        arguments.addAll(intervalSubsetReadCountFiles.stream().map(File::getAbsolutePath).collect(Collectors.toList()));    //must follow addition of "--read_count_tsv_files"
+        arguments.addAll(intervalSubsetReadCountFiles.stream().map(File::getAbsolutePath).collect(Collectors.toList()));
 
-        final String script;
-        if (runMode == RunMode.COHORT) {
-            script = COHORT_DENOISING_CALLING_PYTHON_SCRIPT;
-            arguments.add("--modeling_interval_list=" + specifiedIntervalsFile.getAbsolutePath());   //these are the annotated intervals, if provided
-            arguments.add("--output_model_path=" + outputDirArg + outputPrefix + MODEL_PATH_SUFFIX);
-            if (inputModelDir != null) {
-                arguments.add("--input_model_path=" + inputModelDir);
-            }
-        } else {
-            script = CASE_SAMPLE_CALLING_PYTHON_SCRIPT;
-            arguments.add("--input_model_path=" + inputModelDir);
-        }
+        arguments.addAll(germlineDenoisingModelArgumentCollection.generatePythonArguments(runMode));
+        arguments.addAll(germlineCallingArgumentCollection.generatePythonArguments(runMode));
+        arguments.addAll(germlineCNVHybridADVIArgumentCollection.generatePythonArguments());
+
         return executor.executeScript(
                 new Resource(script, GermlineCNVCaller.class),
                 null,

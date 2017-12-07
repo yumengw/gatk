@@ -18,11 +18,11 @@ import java.util.stream.IntStream;
  *
  */
 public final class DetermineGermlineContigPloidyIntegrationTest extends CommandLineProgramTest {
-    private static final String ploidyDeterminationTestDir = copyNumberTestDir + "ploidy_determination/";
+    private static final String gCNVSimDataDir = copyNumberTestDir + "gcnv-sim-data/";
     private static final File testContigPloidyPriorFile =
-            new File(ploidyDeterminationTestDir + "contig_ploidy_prior.tsv");
+            new File(gCNVSimDataDir + "contig_ploidy_prior.tsv");
     private static final File[] testCountFiles = IntStream.range(0, 20)
-            .mapToObj(n -> new File(ploidyDeterminationTestDir + String.format("SAMPLE_%03d_counts.tsv", n)))
+            .mapToObj(n -> new File(gCNVSimDataDir + String.format("SAMPLE_%03d_counts.tsv", n)))
             .toArray(File[]::new);
     private final File tempOutputDir = createTempDir("test-ploidy");
 
