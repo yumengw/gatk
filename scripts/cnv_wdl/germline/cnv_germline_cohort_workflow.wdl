@@ -185,6 +185,7 @@ task GermlineCNVCallerCohortMode {
         tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls
 
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
+            --runMode COHORT \
             -L ${intervals} \
             --input ${sep=" --input " read_count_files} \
             --contigPloidyCalls contig-ploidy-calls \

@@ -163,6 +163,7 @@ task GermlineCNVCallerCaseMode {
         tar xzf ${gcnv_model_tar} -C gcnv-model
 
         java -Xmx${machine_mem}g -jar $GATK_JAR GermlineCNVCaller \
+            --runMode CASE \
             --input ${sep=" --input " read_count_files} \
             --contigPloidyCalls contig-ploidy-calls \
             --model gcnv-model \
