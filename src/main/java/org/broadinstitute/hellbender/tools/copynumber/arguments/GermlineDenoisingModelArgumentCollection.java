@@ -100,7 +100,7 @@ public final class GermlineDenoisingModelArgumentCollection implements Serializa
 
     @Argument(
             doc = "The strategy for calculating copy number posterior expectations in the denoising model.",
-            fullName = "copy-number-posterior-expectation-runMode",
+            fullName = "copy-number-posterior-expectation-mode",
             optional = true
     )
     private CopyNumberPosteriorExpectationMode copyNumberPosteriorExpectationMode =
@@ -113,6 +113,19 @@ public final class GermlineDenoisingModelArgumentCollection implements Serializa
     )
     private boolean enableBiasFactors = true;
 
+    @Argument(
+            doc = "If copy-number-posterior-expectation-mode is set to hybrid, pad active intervals determined " +
+                    "at any time by this value (in the units of bp) in order to obtain the set of intervals on " +
+                    "which copy number posterior expectation is performed exactly.",
+            fullName = "active-class-padding-hybrid-mode",
+            optional = true
+    )
+    private int activeClassPaddingHybridMode = 50000;
+
+    /**
+     * Generates arguments for the python CLI tool. Note that 'enable_explicit_gc_bias_modeling' is added
+     * by {@link GermlineCNVCaller}.
+     */
     public List<String> generatePythonArguments(final GermlineCNVCaller.RunMode runMode) {
         final List<String> arguments = new ArrayList<>(Arrays.asList(
                 String.format("--psi_s_scale=%e", samplePsiScale),
@@ -126,10 +139,15 @@ public final class GermlineDenoisingModelArgumentCollection implements Serializa
                     String.format("--log_mean_bias_std=%e", logMeanBiasStandardDeviation),
                     String.format("--init_ard_rel_unexplained_variance=%e", initARDRelUnexplainedVariance),
                     String.format("--num_gc_bins=%d", numGCBins),
-                    String.format("--gc_curve_sd=%e", gcCurveStandardDeviation)));
+                    String.format("--gc_curve_sd=%e", gcCurveStandardDeviation),
+                    String.format("--active_class_padding_hybrid_mode=%d", activeClassPaddingHybridMode)));
             if (enableBiasFactors) {
                 arguments.add("--enable_bias_factors=True");
+            } else {
+                arguments.add("--enable_bias_factors=False");
             }
+            //this python argument is not exposed but we add it for completeness and logging purposes
+            arguments.add("--disable_bias_factors_in_active_class=False");
         }
         return arguments;
     }

@@ -6,7 +6,6 @@ import org.broadinstitute.hellbender.tools.copynumber.GermlineCNVCaller;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,7 +20,15 @@ public final class GermlineCallingArgumentCollection implements Serializable {
             minValue = 0.,
             optional = true
     )
-    private double pAlt = 1E-6;
+    private double pAlt = 1e-6;
+
+    @Argument(
+            doc = "Prior probability of treating an interval as CNV-active",
+            fullName = "p-active",
+            minValue = 0.,
+            optional = true
+    )
+    private double pActive = 1e-2;
 
     @Argument(
             doc = "Coherence length of CNV events (in the units of bp).",
@@ -53,7 +60,8 @@ public final class GermlineCallingArgumentCollection implements Serializable {
                 String.format("--cnv_coherence_length=%e", cnvCoherenceLength),
                 String.format("--max_copy_number=%d", maxCopyNumber)));
         if (runMode == GermlineCNVCaller.RunMode.COHORT) {
-            arguments.addAll(Collections.singletonList(
+            arguments.addAll(Arrays.asList(
+                    String.format("--p_active=%f", pActive),
                     String.format("--class_coherence_length=%f", classCoherenceLength)));
         }
         return arguments;

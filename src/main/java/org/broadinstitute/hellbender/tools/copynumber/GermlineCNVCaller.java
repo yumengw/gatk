@@ -333,12 +333,14 @@ public final class GermlineCNVCaller extends CommandLineProgram {
             //these are the annotated intervals, if provided
             arguments.add("--modeling_interval_list=" + specifiedIntervalsFile.getAbsolutePath());
             arguments.add("--output_model_path=" + outputDirArg + outputPrefix + MODEL_PATH_SUFFIX);
+            if (inputAnnotatedIntervalsFile != null) {
+                arguments.add("--enable_explicit_gc_bias_modeling=True");
+            } else {
+                arguments.add("--enable_explicit_gc_bias_modeling=False");
+            }
         } else {
             script = CASE_SAMPLE_CALLING_PYTHON_SCRIPT;
-        }
-
-        if (inputAnnotatedIntervalsFile != null) {
-            arguments.add("--enable_explicit_gc_bias_modeling=True");
+            // in the case mode, explicit gc bias modeling is set by the model
         }
 
         arguments.add("--read_count_tsv_files");

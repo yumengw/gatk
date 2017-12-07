@@ -122,7 +122,7 @@ task CreateReadCountPanelOfNormals {
             --doImputeZeros ${default="true" do_impute_zeros} \
             --extremeOutlierTruncationPercentile ${default="0.1" extreme_outlier_truncation_percentile} \
             --numberOfEigensamples ${default="20" number_of_eigensamples} \
-            ${"--annotatedIntervals " + annotated_intervals} \
+            ${"--annotated-intervals " + annotated_intervals} \
             --output ${pon_entity_id}.pon.hdf5
     >>>
 

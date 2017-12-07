@@ -335,7 +335,7 @@ task ModelSegments {
             --maxNumSmoothingIterations ${default=10 max_num_smoothing_iterations} \
             --numSmoothingIterationsPerFit ${default=0 num_smoothing_iterations_per_fit} \
             --output ${output_dir_} \
-            --outputPrefix ${entity_id}
+            --output-prefix ${entity_id}
 
         # We need to create the file even if the above command doesn't so we have something to delocalize
         # If no file is created by the above task then it will copy out an empty file
@@ -437,7 +437,7 @@ task PlotDenoisedCopyRatios {
             --sequence-dictionary ${ref_fasta_dict} \
             --minimumContigLength ${default="1000000" minimum_contig_length} \
             --output ${output_dir_} \
-            --outputPrefix ${entity_id}
+            --output-prefix ${entity_id}
     >>>
 
     runtime {
@@ -492,7 +492,7 @@ task PlotModeledSegments {
             --sequence-dictionary ${ref_fasta_dict} \
             --minimumContigLength ${default="1000000" minimum_contig_length} \
             --output ${output_dir_} \
-            --outputPrefix ${entity_id}
+            --output-prefix ${entity_id}
     >>>
 
     runtime {
