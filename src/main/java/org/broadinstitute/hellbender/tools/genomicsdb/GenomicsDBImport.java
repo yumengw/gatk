@@ -96,7 +96,14 @@ import java.util.function.Function;
  *       -sampleNameMap cohort.sample_map \
  *       --reader-threads 5
  *  </pre>
-
+ *
+ *  The sample map is a tab-delimited text file with sample_name--tab--path_to_sample_vcf per line.
+ *
+ *  <pre>
+ *  sample1      sample1.vcf.gz
+ *  sample2      sample2.vcf.gz
+ *  sample3      sample3.vcf.gz
+ *  </pre>
  *
  * <h3>Caveats</h3>
  * <ul>

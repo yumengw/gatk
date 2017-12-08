@@ -85,24 +85,24 @@ import java.util.*;
  *
  * <h4>Refine genotypes based on the discovered allele frequency in an input VCF containing many samples</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
- *   -V multisample_input.vcf \
- *   -O output.vcf
+ * gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
+ *   -V multisample_input.vcf.gz \
+ *   -O output.vcf.gz
  * </pre>
  *
  * <h4>Inform the genotype assignment of a single sample using the 1000G phase 3 samples</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
- *   -V sample_input.vcf \
- *   -O sample_output.1000G_PPs.vcf \
- *   -supporting 1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf
+ * gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
+ *   -V sample_input.vcf.gz \
+ *   -O sample_output.1000G_PPs.vcf.gz \
+ *   -supporting 1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf.gz
  * </pre>
  *
  * <h4>Apply only family priors to a callset</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
- *   -V input.vcf \
- *   -O output.vcf \
+ * gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
+ *   -V input.vcf.gz \
+ *   -O output.vcf.gz \
  *   -ped family.ped \
  *   --skipPopulationPriors
  * </pre>
@@ -110,19 +110,19 @@ import java.util.*;
  * <h4>Apply frequency and HWE-based priors to the genotypes of a family without including the family allele counts
  * in the allele frequency estimates</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
- *   -V input.vcf \
- *   -O output.vcf \
+ * gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
+ *   -V input.vcf.gz \
+ *   -O output.vcf.gz \
  *   --ignoreInputSamples
  * </pre>
  *
  * <h4>Calculate the posterior genotypes of a callset, and impose that a variant *not seen* in the external panel
  * is tantamount to being AC=0, AN=5008 within that panel</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
- *   -V input.vcf \
- *   -O output.vcf \
- *   -supporting 1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf \
+ * gatk --javaOptions "-Xmx4g" CalculateGenotypePosteriors \
+ *   -V input.vcf.gz \
+ *   -O output.vcf.gz \
+ *   -supporting 1000G.phase3.integrated.sites_only.no_MATCHED_REV.hg38.vcf.gz \
  *   --numRefSamplesIfNoCall 2504
  * </pre>
  *

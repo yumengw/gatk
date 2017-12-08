@@ -56,9 +56,9 @@ import java.util.regex.Pattern;
  * assigned a score and filter status.</p>
  *
  * <p>VQSR is probably the hardest part of the Best Practices to get right, so be sure to read the
- * <a href='https://www.broadinstitute.org/gatk/guide/article?id=39'>method documentation</a>,
- * <a href='https://www.broadinstitute.org/gatk/guide/article?id=1259'>parameter recommendations</a> and
- * <a href='https://www.broadinstitute.org/gatk/guide/article?id=2805'>tutorial</a> to really understand what these
+ * <a href='https://software.broadinstitute.org/gatk/guide/article?id=39'>method documentation</a>,
+ * <a href='https://software.broadinstitute.org/gatk/guide/article?id=1259'>parameter recommendations</a> and
+ * <a href='https://software.broadinstitute.org/gatk/guide/article?id=2805'>tutorial</a> to really understand what these
  * tools do and how to use them for best results on your own data.</p>
  *
  * <h3>Inputs</h3>
@@ -76,12 +76,12 @@ import java.util.regex.Pattern;
  *
  * <h3>Usage examples</h3>
  *
- * <h4>Applying rcelibration/filtering to SNPs</h4>
+ * <h4>Applying recalibration/filtering to SNPs</h4>
  * <pre>
- * ./gatk ApplyVQSR \
+ * gatk ApplyVQSR \
  *   -R Homo_sapiens_assembly38.fasta \
- *   -V input.vcf \
- *   -O output.vcf \
+ *   -V input.vcf.gz \
+ *   -O output.vcf.gz \
  *   --ts_filter_level 99.0 \
  *   -tranchesFile output.tranches \
  *   --recalFile output.recal \
@@ -90,10 +90,10 @@ import java.util.regex.Pattern;
  *
  * <h4>Allele-specific version of the SNP filtering (beta)</h4>
  * <pre>
- * ./gatk ApplyVQSR \
+ * gatk ApplyVQSR \
  *   -R Homo_sapiens_assembly38.fasta \
- *   -V input.vcf \
- *   -O output.vcf \
+ *   -V input.vcf.gz \
+ *   -O output.vcf.gz \
  *   -AS \
  *   --ts_filter_level 99.0 \
  *   -tranchesFile output.AS.tranches \

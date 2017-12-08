@@ -34,7 +34,7 @@ import java.util.*;
  *
  * <h3>Statistical notes</h3>
  * <p>This annotation uses the implementation from
- * Wigginton JE, Cutler DJ, Abecasis GR. A Note on Exact Tests of Hardy-Weinberg Equilibrium. American Journal of Human Genetics. 2005;76(5):887-893.
+ * <a href='http://www.sciencedirect.com/science/article/pii/S0002929707607356?via%3Dihub'>Wigginton JE, Cutler DJ, Abecasis GR. <i>A Note on Exact Tests of Hardy-Weinberg Equilibrium. American Journal of Human Genetics</i>. 2005;76(5):887-893</a>.
  *
  * <h3>Caveat</h3>
  * <p>The Excess Heterozygosity annotation can only be calculated for diploid samples.</p>

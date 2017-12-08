@@ -46,10 +46,10 @@ import static java.util.Collections.singleton;
  *
  * <h3>Usage example</h3>
  * <pre>
- *   ./gatk VariantFiltration \
+ *   gatk VariantFiltration \
  *   -R reference.fasta \
- *   -V input.vcf \
- *   -O output.vcf \
+ *   -V input.vcf.gz \
+ *   -O output.vcf.gz \
  *   --filterExpression "AB < 0.2 || MQ0 > 50" \
  *   --filterName "my_filters"
  * </pre>

@@ -68,9 +68,9 @@ import java.util.*;
  * assigned a score and filter status.</p>
  *
  * <p>VQSR is probably the hardest part of the Best Practices to get right, so be sure to read the
- * <a href='https://www.broadinstitute.org/gatk/guide/article?id=39'>method documentation</a>,
- * <a href='https://www.broadinstitute.org/gatk/guide/article?id=1259'>parameter recommendations</a> and
- * <a href='https://www.broadinstitute.org/gatk/guide/article?id=2805'>tutorial</a> to really understand what these
+ * <a href='https://software.broadinstitute.org/gatk/guide/article?id=39'>method documentation</a>,
+ * <a href='https://software.broadinstitute.org/gatk/guide/article?id=1259'>parameter recommendations</a> and
+ * <a href='https://software.broadinstitute.org/gatk/guide/article?id=2805'>tutorial</a> to really understand what these
  * tools do and how to use them for best results on your own data.</p>
  *
  * <h3>Inputs</h3>
@@ -93,13 +93,13 @@ import java.util.*;
  *
  * <h4>Recalibrating SNPs in exome data</h4>
  * <pre>
- * ./gatk VariantRecalibrator \
+ * gatk VariantRecalibrator \
  *   -R Homo_sapiens_assembly38.fasta \
- *   -V input.vcf \
- *   --resource hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.sites.vcf \
- *   --resource omni,known=false,training=true,truth=false,prior=12.0 1000G_omni2.5.hg38.sites.vcf \
- *   --resource 1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf \
- *   --resource dbsnp,known=true,training=false,truth=false,prior=2.0 Homo_sapiens_assembly38.dbsnp138.vcf \
+ *   -V input.vcf.gz \
+ *   --resource hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.sites.vcf.gz \
+ *   --resource omni,known=false,training=true,truth=false,prior=12.0 1000G_omni2.5.hg38.sites.vcf.gz \
+ *   --resource 1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz \
+ *   --resource dbsnp,known=true,training=false,truth=false,prior=2.0 Homo_sapiens_assembly38.dbsnp138.vcf.gz \
  *   -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR \
  *   -mode SNP \
  *   --recalFile output.recal \
@@ -109,14 +109,14 @@ import java.util.*;
  *
  * <h4>Allele-specific version of the SNP recalibration (beta)</h4>
  * <pre>
- * ./gatk VariantRecalibrator \
+ * gatk VariantRecalibrator \
  *   -R Homo_sapiens_assembly38.fasta \
- *   -V input.vcf \
+ *   -V input.vcf.gz \
  *   -AS \
- *   --resource hapmap,known=false,training=true,truth=true,prior=15.0:hapmap_3.3.hg38.sites.vcf \
- *   --resource omni,known=false,training=true,truth=false,prior=12.0:1000G_omni2.5.hg38.sites.vcf \
- *   --resource 1000G,known=false,training=true,truth=false,prior=10.0:1000G_phase1.snps.high_confidence.hg38.vcf \
- *   --resource dbsnp,known=true,training=false,truth=false,prior=2.0 Homo_sapiens_assembly38.dbsnp138.vcf \
+ *   --resource hapmap,known=false,training=true,truth=true,prior=15.0:hapmap_3.3.hg38.sites.vcf.gz \
+ *   --resource omni,known=false,training=true,truth=false,prior=12.0:1000G_omni2.5.hg38.sites.vcf.gz \
+ *   --resource 1000G,known=false,training=true,truth=false,prior=10.0:1000G_phase1.snps.high_confidence.hg38.vcf.gz \
+ *   --resource dbsnp,known=true,training=false,truth=false,prior=2.0 Homo_sapiens_assembly38.dbsnp138.vcf.gz \
  *   -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR \
  *   -mode SNP \
  *   --recalFile output.AS.recal \
@@ -134,7 +134,7 @@ import java.util.*;
  * They are not meant to be taken as specific recommendations of values to use in your own work, and they may be
  * different from the values cited elsewhere in our documentation. For the latest and greatest recommendations on
  * how to set parameter values for your own analyses, please read the Best Practices section of the documentation,
- * especially the <a href='https://www.broadinstitute.org/gatk/guide/article?id=1259'>FAQ document</a> on VQSR parameters.</li>
+ * especially the <a href='https://software.broadinstitute.org/gatk/guide/article?id=1259'>FAQ document</a> on VQSR parameters.</li>
  * <li>Whole genomes and exomes take slightly different parameters, so make sure you adapt your commands accordingly! See
  * the documents linked above for details.</li>
  * <li>If you work with small datasets (e.g. targeted capture experiments or small number of exomes), you will run into
@@ -212,7 +212,7 @@ public class VariantRecalibrator extends MultiVariantWalker {
     /**
      * The expected transition / transversion ratio of true novel variants in your targeted region (whole genome, exome, specific
      * genes), which varies greatly by the CpG and GC content of the region. See expected Ti/Tv ratios section of the GATK best
-     * practices documentation (http://www.broadinstitute.org/gatk/guide/best-practices) for more information.
+     * practices documentation (https://software.broadinstitute.org/gatk/guide/best-practices) for more information.
      * Normal values are 2.15 for human whole genome values and 3.2 for human whole exomes. Note
      * that this parameter is used for display purposes only and isn't used anywhere in the algorithm!
      */

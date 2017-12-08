@@ -49,10 +49,10 @@ import java.util.List;
  * </p>
  * <h3>Usage Example</h3>
  * <p>
- *     ./gatk ASEReadCounter \
+ *     gatk ASEReadCounter \
  *     -R Homo_sapiens_assembly38.fasta \
  *     -I input.bam \
- *     -V sites.vcf \
+ *     -V sites.vcf.gz \
  *     -O output.table
  * </p>
  * <p>
