@@ -14,5 +14,5 @@
   "CNVGermlineCohortWorkflow.gcnv_disable_annealing": true,
   "CNVGermlineCohortWorkflow.gcnv_min_training_epochs": 1,
   "CNVGermlineCohortWorkflow.gcnv_max_training_epochs": 5,
-  "CNVGermlineCaseWorkflow.num_thermal_epochs": 1
+  "CNVGermlineCohortWorkflow.gcnv_num_thermal_epochs": 1
 }
