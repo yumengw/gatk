@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  *
  * <h3>Usage example</h3>
  * <pre>
- *     ./gatk ParallelCopyGCSDirectoryIntoHDFSSpark \
+ *     gatk ParallelCopyGCSDirectoryIntoHDFSSpark \
  *          --input-gcs-path gs://my-bucket/my-data-directory/ \
  *          --output-hdfs-directory hdfs://my-dataproc-spark-cluster-m:8020/my-data \
  *          -- \
