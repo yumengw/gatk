@@ -35,6 +35,7 @@ workflow CNVGermlineCohortWorkflow {
     File ref_fasta_fai
     File ref_fasta
     String gatk_docker
+    Int? preemptible_attempts
 
     ##################################
     #### optional basic arguments ####
@@ -115,7 +116,8 @@ workflow CNVGermlineCohortWorkflow {
             ref_fasta_fai = ref_fasta_fai,
             ref_fasta_dict = ref_fasta_dict,
             gatk4_jar_override = gatk4_jar_override,
-            gatk_docker = gatk_docker
+            gatk_docker = gatk_docker,
+            preemptible_attempts = preemptible_attempts
     }
 
     if (select_first([do_explicit_gc_correction, false])) {
@@ -126,7 +128,8 @@ workflow CNVGermlineCohortWorkflow {
                 ref_fasta_fai = ref_fasta_fai,
                 ref_fasta_dict = ref_fasta_dict,
                 gatk4_jar_override = gatk4_jar_override,
-                gatk_docker = gatk_docker
+                gatk_docker = gatk_docker,
+                preemptible_attempts = preemptible_attempts
         }
     }
 
@@ -137,7 +140,8 @@ workflow CNVGermlineCohortWorkflow {
                 bam = normal_bam[0],
                 bam_idx = normal_bam[1],
                 gatk4_jar_override = gatk4_jar_override,
-                gatk_docker = gatk_docker
+                gatk_docker = gatk_docker,
+                preemptible_attempts = preemptible_attempts
         }
     }
 
@@ -154,13 +158,15 @@ workflow CNVGermlineCohortWorkflow {
             mapping_error_rate = ploidy_mapping_error_rate,
             global_psi_scale = ploidy_global_psi_scale,
             sample_psi_scale = ploidy_sample_psi_scale,
+            preemptible_attempts = preemptible_attempts
     }
 
     call CNVTasks.ScatterIntervals {
         input:
             interval_list = PreprocessIntervals.preprocessed_intervals,
             num_intervals_per_scatter = num_intervals_per_scatter,
-            gatk_docker = gatk_docker
+            gatk_docker = gatk_docker,
+            preemptible_attempts = preemptible_attempts
     }
 
     scatter (scatter_index in range(length(ScatterIntervals.scattered_interval_lists))) {
@@ -211,7 +217,8 @@ workflow CNVGermlineCohortWorkflow {
                 max_calling_iters = gcnv_max_calling_iters,
                 caller_update_convergence_threshold = gcnv_caller_update_convergence_threshold,
                 caller_admixing_rate = gcnv_caller_admixing_rate,
-                disable_annealing = gcnv_disable_annealing
+                disable_annealing = gcnv_disable_annealing,
+                preemptible_attempts = preemptible_attempts
         }
     }
 }
@@ -248,6 +255,8 @@ task DetermineGermlineContigPloidyCohortMode {
         set -e
         mkdir ${output_dir_}
         GATK_JAR=${default="/root/gatk.jar" gatk4_jar_override}
+        export MKL_NUM_THREADS=${default=8 cpu}
+        export OMP_NUM_THREADS=${default=8 cpu}
 
         java -Xmx${machine_mem}g -jar $GATK_JAR DetermineGermlineContigPloidy \
             --input ${sep=" --input " read_count_files} \
@@ -347,6 +356,8 @@ task GermlineCNVCallerCohortMode {
         set -e
         mkdir ${output_dir_}
         GATK_JAR=${default="/root/gatk.jar" gatk4_jar_override}
+        export MKL_NUM_THREADS=${default=8 cpu}
+        export OMP_NUM_THREADS=${default=8 cpu}
 
         mkdir contig-ploidy-calls-dir
         tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls-dir

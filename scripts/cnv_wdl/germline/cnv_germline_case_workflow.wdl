@@ -31,6 +31,7 @@ workflow CNVGermlineCaseWorkflow {
     File ref_fasta_fai
     File ref_fasta
     String gatk_docker
+    Int? preemptible_attempts
 
     ##################################
     #### optional basic arguments ####
@@ -93,7 +94,8 @@ workflow CNVGermlineCaseWorkflow {
             ref_fasta_fai = ref_fasta_fai,
             ref_fasta_dict = ref_fasta_dict,
             gatk4_jar_override = gatk4_jar_override,
-            gatk_docker = gatk_docker
+            gatk_docker = gatk_docker,
+            preemptible_attempts = preemptible_attempts
     }
 
     call CNVTasks.CollectCounts {
@@ -102,7 +104,8 @@ workflow CNVGermlineCaseWorkflow {
             bam = bam,
             bam_idx = bam_idx,
             gatk4_jar_override = gatk4_jar_override,
-            gatk_docker = gatk_docker
+            gatk_docker = gatk_docker,
+            preemptible_attempts = preemptible_attempts
     }
 
     call DetermineGermlineContigPloidyCaseMode {
@@ -114,14 +117,16 @@ workflow CNVGermlineCaseWorkflow {
             mem = mem_for_determine_germline_contig_ploidy,
             cpu = cpu_for_determine_germline_contig_ploidy,
             mapping_error_rate = ploidy_mapping_error_rate,
-            sample_psi_scale = ploidy_sample_psi_scale
+            sample_psi_scale = ploidy_sample_psi_scale,
+            preemptible_attempts = preemptible_attempts
     }
 
     call CNVTasks.ScatterIntervals {
         input:
             interval_list = PreprocessIntervals.preprocessed_intervals,
             num_intervals_per_scatter = num_intervals_per_scatter,
-            gatk_docker = gatk_docker
+            gatk_docker = gatk_docker,
+            preemptible_attempts = preemptible_attempts
     }
 
     scatter (scatter_index in range(length(ScatterIntervals.scattered_interval_lists))) {
@@ -162,7 +167,8 @@ workflow CNVGermlineCaseWorkflow {
                 max_calling_iters = gcnv_max_calling_iters,
                 caller_update_convergence_threshold = gcnv_caller_update_convergence_threshold,
                 caller_admixing_rate = gcnv_caller_admixing_rate,
-                disable_annealing = gcnv_disable_annealing
+                disable_annealing = gcnv_disable_annealing,
+                preemptible_attempts = preemptible_attempts
         }
     }
 }
@@ -195,6 +201,8 @@ task DetermineGermlineContigPloidyCaseMode {
         set -e
         mkdir ${output_dir_}
         GATK_JAR=${default="/root/gatk.jar" gatk4_jar_override}
+        export MKL_NUM_THREADS=${default=8 cpu}
+        export OMP_NUM_THREADS=${default=8 cpu}
 
         mkdir input-contig-ploidy-model
         tar xzf ${contig_ploidy_model_tar} -C input-contig-ploidy-model
@@ -283,6 +291,8 @@ task GermlineCNVCallerCaseMode {
         set -e
         mkdir ${output_dir_}
         GATK_JAR=${default="/root/gatk.jar" gatk4_jar_override}
+        export MKL_NUM_THREADS=${default=8 cpu}
+        export OMP_NUM_THREADS=${default=8 cpu}
 
         mkdir contig-ploidy-calls-dir
         tar xzf ${contig_ploidy_calls_tar} -C contig-ploidy-calls-dir
