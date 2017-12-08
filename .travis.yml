@@ -7,14 +7,6 @@ git:
   lfs_skip_smudge: true
 jdk:
 - openjdk8
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-6
-      - g++-6
-      - cmake
 env:
   matrix:
   - TEST_TYPE=cloud UPLOAD=true
@@ -32,7 +24,7 @@ env:
   #google cloud stuff
   - CLOUDSDK_CORE_DISABLE_PROMPTS=1
   - GCLOUD_HOME=$HOME/gcloud/google-cloud-sdk/bin
-  - CLOUDSDK_PYTHON_SITEPACKAGES=1 
+  - CLOUDSDK_PYTHON_SITEPACKAGES=1
   - GOOGLE_APPLICATION_CREDENTIALS=$TRAVIS_BUILD_DIR/servicekey.json
   #hellbender specific variables
   - HELLBENDER_TEST_INPUTS=gs://hellbender/test/resources/
@@ -81,7 +73,7 @@ before_install:
     chmod 600 ~/.ssh/id_rsa;
     echo "Testing github authentication:";
     ssh -T git@github.com;
-    echo "Done testing github authentication";  
+    echo "Done testing github authentication";
   fi
 #install R
 - if [[ $TEST_DOCKER != true ]]; then
@@ -125,14 +117,6 @@ install:
     fi;
   fi
 script:
-# Link gcc-6 and g++-6 to their standard commands
-- sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
-- sudo ln -s /usr/bin/g++-6 /usr/local/bin/g++
-# Export CC and CXX to tell cmake which compiler to use
-- export CC=/usr/bin/gcc-6
-- export CXX=/usr/bin/g++-6
-# Check versions of gcc, g++ and cmake
-- gcc -v && g++ -v && cmake --version
 # run a basic sanity check to be sure that gatk-launch doesn't explode
 # run tests
 - if [[ $TRAVIS_EVENT_TYPE == cron ]]; then
