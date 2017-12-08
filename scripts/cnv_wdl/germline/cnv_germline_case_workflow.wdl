@@ -38,6 +38,8 @@ workflow CNVGermlineCaseWorkflow {
     File? gatk4_jar_override
     Int? mem_for_determine_germline_contig_ploidy
     Int? mem_for_germline_cnv_caller
+    Int? cpu_for_determine_germline_contig_ploidy
+    Int? cpu_for_germline_cnv_caller
 
     ###################################################
     #### optional arguments for ploidy case caller ####
@@ -110,6 +112,7 @@ workflow CNVGermlineCaseWorkflow {
             gatk4_jar_override = gatk4_jar_override,
             gatk_docker = gatk_docker,
             mem = mem_for_determine_germline_contig_ploidy,
+            cpu = cpu_for_determine_germline_contig_ploidy,
             mapping_error_rate = ploidy_mapping_error_rate,
             sample_psi_scale = ploidy_sample_psi_scale
     }
@@ -132,6 +135,7 @@ workflow CNVGermlineCaseWorkflow {
                 gatk4_jar_override = gatk4_jar_override,
                 gatk_docker = gatk_docker,
                 mem = mem_for_germline_cnv_caller,
+                cpu = cpu_for_germline_cnv_caller,
                 p_alt = gcnv_p_alt,
                 cnv_coherence_length = gcnv_cnv_coherence_length,
                 max_copy_number = gcnv_max_copy_number,
@@ -212,6 +216,7 @@ task DetermineGermlineContigPloidyCaseMode {
         memory: command_mem + " GB"
         disks: "local-disk " + select_first([disk_space_gb, 150]) + " HDD"
         preemptible: select_first([preemptible_attempts, 2])
+        cpu: select_first([cpu, 8])
     }
 
     output {
@@ -329,6 +334,7 @@ task GermlineCNVCallerCaseMode {
         memory: command_mem + " GB"
         disks: "local-disk " + select_first([disk_space_gb, 150]) + " HDD"
         preemptible: select_first([preemptible_attempts, 2])
+        cpu: select_first([cpu, 8])
     }
 
     output {

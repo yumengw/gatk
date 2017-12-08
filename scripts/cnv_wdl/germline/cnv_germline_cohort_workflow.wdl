@@ -42,6 +42,8 @@ workflow CNVGermlineCohortWorkflow {
     File? gatk4_jar_override
     Int? mem_for_determine_germline_contig_ploidy
     Int? mem_for_germline_cnv_caller
+    Int? cpu_for_determine_germline_contig_ploidy
+    Int? cpu_for_germline_cnv_caller
 
     #####################################################
     #### optional arguments for ploidy cohort caller ####
@@ -147,6 +149,7 @@ workflow CNVGermlineCohortWorkflow {
             gatk4_jar_override = gatk4_jar_override,
             gatk_docker = gatk_docker,
             mem = mem_for_determine_germline_contig_ploidy,
+            cpu = cpu_for_determine_germline_contig_ploidy,
             mean_bias_standard_deviation = ploidy_mean_bias_standard_deviation,
             mapping_error_rate = ploidy_mapping_error_rate,
             global_psi_scale = ploidy_global_psi_scale,
@@ -172,6 +175,7 @@ workflow CNVGermlineCohortWorkflow {
                 gatk4_jar_override = gatk4_jar_override,
                 gatk_docker = gatk_docker,
                 mem = mem_for_germline_cnv_caller,
+                cpu = cpu_for_germline_cnv_caller,
                 p_alt = gcnv_p_alt,
                 p_active = gcnv_p_active,
                 cnv_coherence_length = gcnv_cnv_coherence_length,
@@ -221,6 +225,7 @@ task DetermineGermlineContigPloidyCohortMode {
 
     # Runtime parameters
     Int? mem
+    Int? cpu
     String gatk_docker
     Int? preemptible_attempts
     Int? disk_space_gb
@@ -264,6 +269,7 @@ task DetermineGermlineContigPloidyCohortMode {
         memory: command_mem + " GB"
         disks: "local-disk " + select_first([disk_space_gb, 150]) + " HDD"
         preemptible: select_first([preemptible_attempts, 2])
+        cpu: select_first([cpu, 8])
     }
 
     output {
@@ -284,6 +290,7 @@ task GermlineCNVCallerCohortMode {
 
     # Runtime parameters
     Int? mem
+    Int? cpu
     String gatk_docker
     Int? preemptible_attempts
     Int? disk_space_gb
@@ -400,6 +407,7 @@ task GermlineCNVCallerCohortMode {
         memory: command_mem + " GB"
         disks: "local-disk " + select_first([disk_space_gb, 150]) + " HDD"
         preemptible: select_first([preemptible_attempts, 2])
+        cpu: select_first([cpu, 8])
     }
 
     output {
