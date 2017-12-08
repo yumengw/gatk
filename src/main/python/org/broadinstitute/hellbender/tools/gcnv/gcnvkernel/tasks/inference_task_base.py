@@ -394,7 +394,7 @@ class HybridInferenceTask(InferenceTask):
                     progress_bar.set_description("({0} epoch {1}) ELBO: {2}, SNR: {3}, T: {4:.2f}".format(
                         self.advi_task_name,
                         self.i_epoch,
-                        "{0:.3f} ± {1:.3f}".format(-elbo_mean, np.sqrt(elbo_variance))
+                        "{0:.3f} +/- {1:.3f}".format(-elbo_mean, np.sqrt(elbo_variance))
                         if elbo_mean is not None and elbo_variance is not None else "N/A",
                         "{0:.1f}".format(snr) if snr is not None else "N/A",
                         self.temperature.get_value()[0]),
@@ -405,10 +405,12 @@ class HybridInferenceTask(InferenceTask):
 
             except StopIteration:
                 converged = True
+                progress_bar.refresh()
                 progress_bar.close()
                 self._log_stop(self.advi_task_name, self.i_epoch)
 
             except KeyboardInterrupt:
+                progress_bar.refresh()
                 progress_bar.close()
                 self._log_interrupt(self.advi_task_name, self.i_epoch)
                 raise KeyboardInterrupt
@@ -435,7 +437,7 @@ class HybridInferenceTask(InferenceTask):
                     median_rel_err = np.median(np.abs(update_to_estimator / latest_estimator).flatten())
                     std_rel_err = np.std(np.abs(update_to_estimator / latest_estimator).flatten())
                     del update_to_estimator
-                    progress_bar.set_description("({0} epoch {1}) relative error: {2:2.4f} ± {3:2.4f}".format(
+                    progress_bar.set_description("({0} epoch {1}) relative error: {2:2.4f} +/- {3:2.4f}".format(
                         self.sampling_task_name, self.i_epoch, median_rel_err, std_rel_err),
                         refresh=False)
                     if median_rel_err < self.hybrid_inference_params.log_emission_sampling_median_rel_error:
@@ -451,6 +453,7 @@ class HybridInferenceTask(InferenceTask):
                 self._log_stop(self.sampling_task_name, self.i_epoch)
 
             except KeyboardInterrupt:
+                progress_bar.refresh()
                 progress_bar.close()
                 raise KeyboardInterrupt
 
@@ -490,6 +493,7 @@ class HybridInferenceTask(InferenceTask):
                 self._log_stop(self.calling_task_name, self.i_epoch)
 
             except KeyboardInterrupt:
+                progress_bar.refresh()
                 progress_bar.close()
                 self._log_interrupt(self.calling_task_name, self.i_epoch)
                 raise KeyboardInterrupt
@@ -571,13 +575,29 @@ class HybridInferenceParameters:
 
         self._assert_params()
 
-    # todo the rest of assertions
     def _assert_params(self):
-        assert self.learning_rate >= 0
-        assert self.obj_n_mc >= 0
-        assert self.log_emission_samples_per_round >= 1
-        assert self.log_emission_sampling_rounds >= 1
+        assert self.learning_rate > 0
+        assert self.adamax_beta1 > 0
+        assert self.adamax_beta2 > 0
+        assert self.obj_n_mc > 0
+        assert self.log_emission_samples_per_round > 0
         assert 0.0 < self.log_emission_sampling_median_rel_error < 1.0
+        assert self.log_emission_sampling_rounds > 0
+        assert self.max_advi_iter_first_epoch > 0
+        assert self.max_advi_iter_subsequent_epochs > 0
+        assert self.min_training_epochs > 0
+        assert self.max_training_epochs > 0
+        assert self.max_training_epochs > self.min_training_epochs
+        assert self.num_thermal_epochs <= self.max_training_epochs
+        assert self.initial_temperature >= 1.0
+        assert self.disable_annealing or self.num_thermal_epochs > 0
+        assert self.track_model_params_every > 0
+        assert self.convergence_snr_averaging_window > 0
+        assert self.convergence_snr_trigger_threshold > 0
+        assert self.max_calling_iters > 0
+        assert self.caller_update_convergence_threshold > 0
+        assert self.caller_admixing_rate > 0
+        assert self.sampler_smoothing_window >= 0
 
         if self.track_model_params:
             assert self.param_tracker_config is not None
