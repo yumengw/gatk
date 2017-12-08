@@ -1,5 +1,9 @@
 from distutils.core import setup
 import re
+import sys
+
+assert sys.version_info >= (3, 4), "gcnvkernel requires Python 3.4.x or later"
+
 VERSIONFILE="gcnvkernel/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
@@ -30,7 +34,5 @@ setup(
         "pymc3 == 3.1",
         "numpy >= 1.13.1",
         "scipy >= 0.19.1",
-        "tqdm >= 4.15.0",
-        "argparse"
-    ],
-)
+        "tqdm >= 4.15.0"
+    ])
