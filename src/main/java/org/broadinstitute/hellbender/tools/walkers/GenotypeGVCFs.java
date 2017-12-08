@@ -38,8 +38,8 @@ import java.util.*;
  * <h3>Input</h3>
  * <p>
  * The GATK4 GenotypeGVCFs tool can take only one input track.  Options are 1) a single single-sample GVCF 2) a single
- * multi-sample GVCF created by CombineGVCFs or 3) a GenomicsDB workspace created by GenomicsDBImport. The original
- * GVCFs should be produced by in HaplotypeCaller with the `-ERC GVCF` or `-ERC BP_RESOLUTION` settings.
+ * multi-sample GVCF created by CombineGVCFs or 3) a GenomicsDB workspace created by GenomicsDBImport.
+ * A sample-level GVCF is produced by HaplotypeCaller with the `-ERC GVCF` setting.
  * </p>
  *
  * <h3>Output</h3>
@@ -49,33 +49,36 @@ import java.util.*;
  *
  * <h3>Usage example</h3>
  *
- * <h4>Perform joint genotyping on a single single-sample GVCF or a single multi-sample GVCF</h4>
+ * <h4>Perform joint genotyping on a singular sample by providing a single-sample GVCF or on a cohort by providing a combined multi-sample GVCF</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" GenotypeGVCFs \
+ * gatk --javaOptions "-Xmx4g" GenotypeGVCFs \
  *   -R Homo_sapiens_assembly38.fasta \
- *   -V input.g.vcf \
- *   -O output.vcf
+ *   -V input.g.vcf.gz \
+ *   -O output.vcf.gz
  * </pre>
  *
  * <h4>Perform joint genotyping on GenomicsDB workspace created with GenomicsDBImport</h4>
  * <pre>
- * ./gatk --javaOptions "-Xmx4g" GenotypeGVCFs \
+ * gatk --javaOptions "-Xmx4g" GenotypeGVCFs \
  *   -R Homo_sapiens_assembly38.fasta \
- *   -V gendb://project_gdb \
- *   -O output.vcf
+ *   -V gendb://my_database \
+ *   -O output.vcf.gz
  * </pre>
  *
- * <h3>Caveat</h3>
- * <p>Only GVCF files produced by HaplotypeCaller (or CombineGVCFs) can be used as input for this tool. Some other
+ * <h3>Caveats</h3>
+ * <ul>
+ *   <li>Only GVCF files produced by HaplotypeCaller (or CombineGVCFs) can be used as input for this tool. Some other
  * programs produce files that they call GVCFs but those lack some important information (accurate genotype likelihoods
- * for every position) that GenotypeGVCFs requires for its operation.</p>
+ * for every position) that GenotypeGVCFs requires for its operation.</li>
+ *   <li>Cannot take multiple GVCF files in one command.</li>
+ * </ul>
  *
  * <h3>Special note on ploidy</h3>
  * <p>This tool is able to handle any ploidy (or mix of ploidies) intelligently; there is no need to specify ploidy
  * for non-diploid organisms.</p>
  *
  */
-@CommandLineProgramProperties(summary = "Perform joint genotyping on one or more samples pre-called with HaplotypeCaller",
+@CommandLineProgramProperties(summary = "Perform joint genotyping on a single-sample GVCF from HaplotypeCaller or a multi-sample GVCF from CombineGVCFs or GenomicsDBImport",
         oneLineSummary = "Perform joint genotyping on one or more samples pre-called with HaplotypeCaller",
         programGroup = VariantProgramGroup.class)
 @DocumentedFeature

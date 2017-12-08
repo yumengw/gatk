@@ -52,17 +52,19 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Call germline SNPs and indels via local re-assembly of haplotypes
+ * Call germline SNPs and indels via local re-assembly of haplotypes.
  *
- * This is an implementation of {@link HaplotypeCaller} using spark to distribute the computation.
+ * <p>This is an implementation of {@link HaplotypeCaller} using spark to distribute the computation.
  * It is still in an early stage of development and does not yet support all the options that the non-spark version does.
- * Specifically it does not support the --dbsnp, --comp, and --bamOutput options.
+ * Specifically it does not support the --dbsnp, --comp, and --bamOutput options.</p>
  *
  * <h3>Usage Example</h3>
- * ./gatk HaplotypeCallerSpark \
+ * <pre>
+ * gatk HaplotypeCallerSpark \
  * -R Homo_sapiens_assembly38.fasta \
  * -I input.bam \
- * -O output.vcf
+ * -O output.vcf.gz
+ * </pre>
  *
  */
 @CommandLineProgramProperties(summary = "HaplotypeCaller on Spark", oneLineSummary = "HaplotypeCaller on Spark", programGroup = SparkProgramGroup.class)

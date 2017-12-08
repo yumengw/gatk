@@ -43,17 +43,24 @@ import java.util.function.Function;
 
 
 /**
- * Import single-sample GVCFs into GenomicsDB before joint genotyping
+ * Import single-sample GVCFs into GenomicsDB before joint genotyping.
  *
- * The current GATK4 Best Practices for SNP and INDEL Calling use GenomicsDBImport to merge GVCFs from multiple samples, thus
+ * <p>The GATK4 Best Practice Workflow for SNP and Indel calling uses GenomicsDBImport to merge GVCFs from multiple samples.
+ * GenomicsDBImport offers the same functionality as CombineGVCFs and comes from the <i>Intel-Broad Center for Genomics</i>.
+ * The datastore transposes sample-centric variant information across genomic loci to make data more accessible to tools and to manual probing.
+ * </p>
  *
- * GenomicsDB is a utility built on top of TileDB, both open-source projects started by the Intel Science and Technology
- * Center for Big Data. In brief, the underlying TileDB is a format for efficiently representing sparse data. Genomics
- * data is typically sparse in that each sample has sparse variants with respect to the entire reference genome.
+ * <p>To query the contents of the GenomicsDB datastore, use
+ * <a href='https://software.broadinstitute.org/gatk/documentation/tooldocs/current/org_broadinstitute_gatk_tools_walkers_variantutils_SelectVariants.php'>SelectVariants</a>.
+ * See <a href='https://software.broadinstitute.org/gatk/documentation/article?id=10061'>Tutorial#10061</a> to get started. </p>
+ *
+ * <p>Details on GenomicsDB are at
+ * <a href='https://github.com/Intel-HLS/GenomicsDB/wiki'>https://github.com/Intel-HLS/GenomicsDB/wiki</a>.
+ * In brief, GenomicsDB is a utility built on top of TileDB. TileDB is a format for efficiently representing sparse data.
+ * Genomics data is typically sparse in that each sample has few variants with respect to the entire reference genome.
  * GenomicsDB contains code to specialize TileDB for genomics applications, such as VCF parsing and INFO field annotation
- * calculation. For more details about GenomicsDB see the github wiki at https://github.com/Intel-HLS/GenomicsDB/wiki/
- *
- * The GenomicsDB format is not meant to be accessed directly. To query the contents of the datastore, use SelectVariants.
+ * calculation.
+ * </p>
  *
  * <h3>Input</h3>
  * <p>
@@ -66,27 +73,41 @@ import java.util.function.Function;
  * A GenomicsDB workspace
  * </p>
  *
- *  <h3>Usage example</h3>
+ *  <h3>Usage examples</h3>
+ *
+ *  Provide each sample GVCF separately.
  *  <pre>
- *    ./gatk --javaOptions "-Xmx4g -Xms4g" \
- *    GenomicsDBImport \
- *       -genomicsDBWorkspace project_gdb \
+ *    gatk GenomicsDBImport \
+ *      -V data/gvcfs/mother.g.vcf \
+ *      -V data/gvcfs/father.g.vcf \
+ *      -V data/gvcfs/son.g.vcf \
+ *      --genomicsDBWorkspace my_database \
+ *      --intervals 20
+ *  </pre>
+ *
+ *  Provide sample GVCFs in a map file.
+ *
+ *  <pre>
+ *    gatk --javaOptions "-Xmx4g -Xms4g" \
+ *       GenomicsDBImport \
+ *       -genomicsDBWorkspace my_database \
  *       -batchSize 50 \
  *       -L chr1:1000-10000 \
  *       -sampleNameMap cohort.sample_map \
- *       -readerThreads 5
+ *       --reader-threads 5
  *  </pre>
+
  *
  * <h3>Caveats</h3>
  * <ul>
- *     <li>A single interval must be provided</li>
- *     <li>Each input GVCF must contain only one sample</li>
+ *     <li>A single interval must be provided. This means each import is limited to a maximum of one contig</li>
+ *     <li>Currently, only supports diploid data</li>
  *     <li>Input GVCFs cannot contain multiple entries for a single genomic position</li>
  *     <li>Currently, a GenomicsDB must be used from the directory structure in which it was created. If copied between file systems, the absolute path must be the same at the destination.</li>
  * </ul>
  *
  * <h3>Developer Note</h3>
- * To read data from GenomicsDB, use the query interface GenomicsDBFeatureReader
+ * To read data from GenomicsDB, use the query interface {@link com.intel.genomicsdb.GenomicsDBFeatureReader}
  */
 @DocumentedFeature
 @CommandLineProgramProperties(
