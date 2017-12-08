@@ -42,7 +42,7 @@ public class CollectFragmentCountsIntegrationTest extends CommandLineProgramTest
                 .addInput(NA12878_BAM)
                 .addArgument("L", INTERVALS_FILE.getAbsolutePath())
                 .addArgument("isr", IntervalSetRule.INTERSECTION.toString())
-                .addArgument(CollectFragmentCounts.OUTPUT_FORMAT_SHORT_NAME, CollectFragmentCounts.OutputFormat.TSV.toString())
+                .addArgument(CollectFragmentCounts.FORMAT_LONG_NAME, CollectFragmentCounts.Format.TSV.toString())
                 .addOutput(resultOutputFile);
         runCommandLine(argsBuilder);
     }
@@ -54,7 +54,7 @@ public class CollectFragmentCountsIntegrationTest extends CommandLineProgramTest
                 .addInput(NA12878_BAM)
                 .addArgument("L", INTERVALS_FILE.getAbsolutePath())
                 .addArgument("ixp", "1")
-                .addArgument(CollectFragmentCounts.OUTPUT_FORMAT_SHORT_NAME, CollectFragmentCounts.OutputFormat.TSV.toString())
+                .addArgument(CollectFragmentCounts.FORMAT_LONG_NAME, CollectFragmentCounts.Format.TSV.toString())
                 .addOutput(resultOutputFile);
         runCommandLine(argsBuilder);
     }
@@ -66,7 +66,7 @@ public class CollectFragmentCountsIntegrationTest extends CommandLineProgramTest
                 .addInput(NA12878_BAM)
                 .addArgument("L", INTERVALS_FILE.getAbsolutePath())
                 .addArgument("ip", "1")
-                .addArgument(CollectFragmentCounts.OUTPUT_FORMAT_SHORT_NAME, CollectFragmentCounts.OutputFormat.TSV.toString())
+                .addArgument(CollectFragmentCounts.FORMAT_LONG_NAME, CollectFragmentCounts.Format.TSV.toString())
                 .addOutput(resultOutputFile);
         runCommandLine(argsBuilder);
     }
@@ -78,7 +78,7 @@ public class CollectFragmentCountsIntegrationTest extends CommandLineProgramTest
                 .addInput(NA12878_BAM)
                 .addArgument("L", INTERVALS_FILE.getAbsolutePath())
                 .addArgument("imr", IntervalMergingRule.ALL.toString())
-                .addArgument(CollectFragmentCounts.OUTPUT_FORMAT_SHORT_NAME, CollectFragmentCounts.OutputFormat.TSV.toString())
+                .addArgument(CollectFragmentCounts.FORMAT_LONG_NAME, CollectFragmentCounts.Format.TSV.toString())
                 .addOutput(resultOutputFile);
         runCommandLine(argsBuilder);
     }
@@ -90,7 +90,7 @@ public class CollectFragmentCountsIntegrationTest extends CommandLineProgramTest
                 .addInput(inputBAMFile)
                 .addArgument("L", INTERVALS_FILE.getAbsolutePath())
                 .addArgument("imr", IntervalMergingRule.OVERLAPPING_ONLY.toString())
-                .addArgument(CollectFragmentCounts.OUTPUT_FORMAT_SHORT_NAME, CollectFragmentCounts.OutputFormat.TSV.toString())
+                .addArgument(CollectFragmentCounts.FORMAT_LONG_NAME, CollectFragmentCounts.Format.TSV.toString())
                 .addOutput(resultOutputFile);
         runCommandLine(argsBuilder);
         final SimpleCountCollection expectedCounts = SimpleCountCollection.read(expectedOutputFile);
@@ -105,7 +105,7 @@ public class CollectFragmentCountsIntegrationTest extends CommandLineProgramTest
                 .addInput(inputBAMFile)
                 .addArgument("L", INTERVALS_FILE.getAbsolutePath())
                 .addArgument("imr", IntervalMergingRule.OVERLAPPING_ONLY.toString())
-                .addArgument(CollectFragmentCounts.OUTPUT_FORMAT_SHORT_NAME, CollectFragmentCounts.OutputFormat.HDF5.toString())
+                .addArgument(CollectFragmentCounts.FORMAT_LONG_NAME, CollectFragmentCounts.Format.HDF5.toString())
                 .addOutput(resultOutputFile);
         runCommandLine(argsBuilder);
         final SimpleCountCollection expectedCounts = SimpleCountCollection.read(expectedOutputFile);
