@@ -314,8 +314,16 @@ public final class AlignmentInterval {
         this.alnModType = modType;
     }
 
-    public int getSpanOnRead() {
+    public int getSizeOnRead() {
         return endInAssembledContig - startInAssembledContig + 1;
+    }
+
+    public boolean containsOnRef(final AlignmentInterval other) {
+        return this.referenceSpan.contains(other.referenceSpan);
+    }
+
+    public boolean containsOnRead(final AlignmentInterval other) {
+        return this.startInAssembledContig <= other.startInAssembledContig && this.endInAssembledContig >= other.endInAssembledContig;
     }
 
     /**
@@ -565,20 +573,45 @@ public final class AlignmentInterval {
     }
 
     /**
-     * @return  inclusive, 1-based boundaries on read to which this AlignmentInterval belongs,
-     *          if the given {@code otherRefSpan} overlaps the ref span of this alignment;
-     *          otherwise return a tuple 2 of (-1, -1)
+     * Given an alignment (represented by this AlignmentInterval)
+     * and a reference span (in this case {@code otherRefSpan}),
+     * the overlap between the two reference spans, if any,
+     * has a corresponding span on the read to which the alignment belongs.
+     * This method computes that 1-based, inclusive span on the read.
+     *
+     * The utility we have in mind, currently, is for
+     * inferring intervals on a read
+     * where it overlaps the requested {@code otherRefSpan}
+     * so that one can extract corresponding the read sequence.
+     *
+     * If {@code otherRefSpan} does not overlap with the ref span of the alignment;
+     * the computed value is a tuple 2 of (-1, -1).
      */
-    public Tuple2<Integer, Integer> overlapBoundariesOnRead(final SimpleInterval otherRefSpan) {
+    public Tuple2<Integer, Integer> readIntervalAlignedToRefSpan(final SimpleInterval otherRefSpan) {
         final int start, end;
-        if ( ! Utils.nonNull(otherRefSpan).overlaps(referenceSpan) ) {
+        if ( ! Utils.nonNull(otherRefSpan).overlaps(referenceSpan) ) { // ref spans doesn't overlap
             start = end = -1;
-        } else if ( otherRefSpan.contains(referenceSpan) ) {
+        } else if ( otherRefSpan.contains(referenceSpan) ) { // this ref span contained in other ref span, the entire read block by this alignment
             start = startInAssembledContig;
             end = endInAssembledContig;
-        } else {
+        } else { // most complicated
+
+            // computing because utility method requests hard clipped bases from the start of the read should NOT be counted
             final CigarElement firstCigarElement = cigarAlong5to3DirectionOfContig.getFirstCigarElement();
             final int hardClipOffset = firstCigarElement.getOperator().equals(CigarOperator.H) ? firstCigarElement.getLength() : 0;
+
+            // computes how many bases on this reference span need to be walked, both from start and from end
+            // examples:
+            // this :   |------------|
+            // that :           |---------------|
+            // ovlap:           |----|
+            // bases:   |<- 9 ->|
+            // then walking distance from start would be 8=9-1, and from end would be 0
+            // this :           |---------------|
+            // that :   |------------|
+            // ovlap:           |----|
+            // bases:                |<-  12  ->|
+            // then walking distance from start would be 0, and from end would be 11=12-1
             final int distOnRefForStart;
             final int distOnRefForEnd;
             if (forwardStrand) {
@@ -588,6 +621,8 @@ public final class AlignmentInterval {
                 distOnRefForStart = Math.max(0, referenceSpan.getEnd() - otherRefSpan.getEnd());
                 distOnRefForEnd = Math.max(0, otherRefSpan.getStart() - referenceSpan.getStart());
             }
+            // then using the walking distances on alignment's ref span to compute
+            // associated walking distances on read interval (by definition must be a sub-interval of alignment's read span)
             int walkDistOnReadFromStart = 0;
             if ( distOnRefForStart != 0 ) {
                 final int startPosOnRead = startInAssembledContig - hardClipOffset; // utility method requests no hard clipped counted
