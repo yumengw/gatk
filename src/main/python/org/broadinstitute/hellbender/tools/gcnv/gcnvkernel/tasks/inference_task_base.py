@@ -3,6 +3,7 @@ import pymc3 as pm
 import theano as th
 import theano.tensor as tt
 import inspect
+import sys
 
 import logging
 import time
@@ -351,7 +352,9 @@ class HybridInferenceTask(InferenceTask):
         max_advi_iters = self.hybrid_inference_params.max_advi_iter_subsequent_epochs if self.i_epoch > 1 \
             else self.hybrid_inference_params.max_advi_iter_first_epoch
         converged = False
-        with tqdm.trange(max_advi_iters, desc="({0}) starting...".format(self.advi_task_name)) as progress_bar:
+        with tqdm.trange(max_advi_iters,
+                         desc="({0}) starting...".format(self.advi_task_name),
+                         file=sys.stdout) as progress_bar:
             try:
                 for _ in progress_bar:
                     loss = self.continuous_model_step_func() / self.elbo_normalization_factor
@@ -400,7 +403,8 @@ class HybridInferenceTask(InferenceTask):
         converged = False
         median_rel_err = np.nan
         with tqdm.trange(self.hybrid_inference_params.log_emission_sampling_rounds,
-                         desc="({0} epoch {1})".format(self.sampling_task_name, self.i_epoch)) as progress_bar:
+                         desc="({0} epoch {1})".format(self.sampling_task_name, self.i_epoch),
+                         file=sys.stdout) as progress_bar:
             try:
                 for i_round in progress_bar:
                     update_to_estimator = self.sampler.draw()
@@ -445,7 +449,8 @@ class HybridInferenceTask(InferenceTask):
         first_call_converged = False  # if convergence is achieved on the first call (stronger)
         iters_converged = False  # if internal loop is converged (weaker, does not imply global convergence)
         with tqdm.trange(self.hybrid_inference_params.max_calling_iters,
-                         desc="({0} epoch {1})".format(self.calling_task_name, self.i_epoch)) as progress_bar:
+                         desc="({0} epoch {1})".format(self.calling_task_name, self.i_epoch),
+                         file=sys.stdout) as progress_bar:
             try:
                 for i_calling_iter in progress_bar:
                     caller_summary = self.caller.call()

@@ -298,13 +298,19 @@ public abstract class HybridADVIArgumentCollection implements Serializable {
                 String.format("--" + HybridADVIArgument.CALLER_ADMIXING_RATE.pythonArg + "=%e",
                         callerAdmixingRate)));
         if (disableCaller) {
-            arguments.add("--" + HybridADVIArgument.DISABLE_CALLER.pythonArg);
+            arguments.add("--" + HybridADVIArgument.DISABLE_CALLER.pythonArg + "=true");
+        } else {
+            arguments.add("--" + HybridADVIArgument.DISABLE_CALLER.pythonArg + "=false");
         }
         if (disableSampler) {
-            arguments.add("--" + HybridADVIArgument.DISABLE_SAMPLER.pythonArg);
+            arguments.add("--" + HybridADVIArgument.DISABLE_SAMPLER.pythonArg + "=true");
+        } else {
+            arguments.add("--" + HybridADVIArgument.DISABLE_SAMPLER.pythonArg + "=false");
         }
         if (disableAnnealing) {
-            arguments.add("--" + HybridADVIArgument.DISABLE_ANNEALING.pythonArg);
+            arguments.add("--" + HybridADVIArgument.DISABLE_ANNEALING.pythonArg + "=true");
+        } else {
+            arguments.add("--" + HybridADVIArgument.DISABLE_ANNEALING.pythonArg + "=false");
         }
         return arguments;
     }

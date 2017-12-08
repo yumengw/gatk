@@ -299,7 +299,7 @@ task GermlineCNVCallerCaseMode {
             --mapping-error-rate ${default="0.01" mapping_error_rate} \
             --sample-psi-scale ${default="0.0001" sample_psi_scale} \
             --depth-correction-tau ${default="10000.0" depth_correction_tau} \
-            --copy-number-posterior-expectation-mode ${default="hybrid" copy_number_posterior_expectation_mode} \
+            --copy-number-posterior-expectation-mode ${default="HYBRID" copy_number_posterior_expectation_mode} \
             --active-class-padding-hybrid-mode ${default="50000" active_class_padding_hybrid_mode} \
             --learning-rate ${default="0.05" learning_rate} \
             --adamax-beta-1 ${default="0.9" adamax_beta_1} \
@@ -319,7 +319,7 @@ task GermlineCNVCallerCaseMode {
             --max-calling-iters ${default="10" max_calling_iters} \
             --caller-update-convergence-threshold ${default="0.001" caller_update_convergence_threshold} \
             --caller-admixing-rate ${default="0.75" caller_admixing_rate} \
-            --disable-annealing + ${default="false" disable_annealing}
+            --disable-annealing ${default="false" disable_annealing}
 
         tar czf case-gcnv-calls-${scatter_index}.tar.gz -C ${output_dir_}/case-calls .
     >>>

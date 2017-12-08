@@ -253,7 +253,7 @@ task DetermineGermlineContigPloidyCohortMode {
             --mean-bias-standard-deviation ${default="0.01" mean_bias_standard_deviation} \
             --mapping-error-rate ${default="0.01" mapping_error_rate} \
             --global-psi-scale ${default="0.001" global_psi_scale} \
-            --sample-psi-scale ${default="0.0001" sample_psi_scale} \
+            --sample-psi-scale ${default="0.0001" sample_psi_scale}
 
         tar czf ${cohort_entity_id}-contig-ploidy-model.tar.gz -C ${output_dir_}/${cohort_entity_id}-model .
         tar czf ${cohort_entity_id}-contig-ploidy-calls.tar.gz -C ${output_dir_}/${cohort_entity_id}-calls .
@@ -368,7 +368,7 @@ task GermlineCNVCallerCohortMode {
             --init-ard-rel-unexplained-variance ${default="0.1" init_ard_rel_unexplained_variance} \
             --num-gc-bins ${default="20" num_gc_bins} \
             --gc-curve-standard-deviation ${default="1.0" gc_curve_standard_deviation} \
-            --copy-number-posterior-expectation-mode ${default="hybrid" copy_number_posterior_expectation_mode} \
+            --copy-number-posterior-expectation-mode ${default="HYBRID" copy_number_posterior_expectation_mode} \
             --enable-bias-factors ${default="true" enable_bias_factors} \
             --active-class-padding-hybrid-mode ${default="50000" active_class_padding_hybrid_mode} \
             --learning-rate ${default="0.05" learning_rate} \
@@ -389,7 +389,7 @@ task GermlineCNVCallerCohortMode {
             --max-calling-iters ${default="10" max_calling_iters} \
             --caller-update-convergence-threshold ${default="0.001" caller_update_convergence_threshold} \
             --caller-admixing-rate ${default="0.75" caller_admixing_rate} \
-            --disable-annealing + ${default="false" disable_annealing}
+            --disable-annealing ${default="false" disable_annealing}
 
         tar czf ${cohort_entity_id}-gcnv-model-${scatter_index}.tar.gz -C ${output_dir_}/${cohort_entity_id}-model .
         tar czf ${cohort_entity_id}-gcnv-calls-${scatter_index}.tar.gz -C ${output_dir_}/${cohort_entity_id}-calls .
