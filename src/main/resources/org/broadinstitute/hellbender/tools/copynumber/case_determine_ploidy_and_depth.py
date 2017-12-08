@@ -58,10 +58,6 @@ gcnvkernel.HybridInferenceParameters.expose_args(
         "--num_thermal_epochs": 10,
         "--max_calling_iters": 1,
         "--caller_update_convergence_threshold": 1e-3
-    },
-    hide={
-        "--disable_sampler",
-        "--disable_caller"
     })
 
 if __name__ == "__main__":

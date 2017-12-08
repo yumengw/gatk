@@ -82,11 +82,7 @@ gcnvkernel.CopyNumberCallingConfig.expose_args(parser)
 
 # override some inference parameters
 gcnvkernel.HybridInferenceParameters.expose_args(
-    parser,
-    hide={
-        "--disable_sampler",
-        "--disable_caller"
-    })
+    parser)
 
 if __name__ == "__main__":
 

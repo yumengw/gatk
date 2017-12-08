@@ -91,12 +91,7 @@ gcnvkernel.CopyNumberCallingConfig.expose_args(
     })
 
 # override some inference parameters
-gcnvkernel.HybridInferenceParameters.expose_args(
-    parser,
-    hide={
-        "--disable_sampler",
-        "--disable_caller"
-    })
+gcnvkernel.HybridInferenceParameters.expose_args(parser)
 
 
 def update_args_dict_from_exported_model(input_model_path: str,
