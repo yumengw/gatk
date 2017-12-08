@@ -4,6 +4,7 @@ import theano as th
 import theano.tensor as tt
 import inspect
 import sys
+import io
 
 import logging
 import time
@@ -85,6 +86,24 @@ class CallerUpdateSummary:
     def __repr__(self):
         """Represents the caller update summary in a human readable format (used in logging)."""
         raise NotImplementedError
+
+
+class LoggerTQDMAdapter(io.StringIO):
+    """Output stream for `tqdm` which will output to logger module instead of `stderr`."""
+    logger = None
+    level = None
+    buf = ''
+
+    def __init__(self, logger, level=logging.INFO):
+        super().__init__()
+        self.logger = logger
+        self.level = level
+
+    def write(self, buf):
+        self.buf = buf.strip('\r\n\t ')
+
+    def flush(self):
+        self.logger.log(self.level, self.buf)
 
 
 class InferenceTask:
@@ -294,6 +313,7 @@ class HybridInferenceTask(InferenceTask):
         self.calling_hist: List[Tuple[int, bool, bool]] = []
         self.previous_sampling_rounds = 0
         self.latest_caller_update_summary: Optional[CallerUpdateSummary] = None
+        self.tqdm_out = LoggerTQDMAdapter(_logger)
 
     @abstractmethod
     def disengage(self):
@@ -354,7 +374,7 @@ class HybridInferenceTask(InferenceTask):
         converged = False
         with tqdm.trange(max_advi_iters,
                          desc="({0}) starting...".format(self.advi_task_name),
-                         file=sys.stdout) as progress_bar:
+                         file=self.tqdm_out) as progress_bar:
             try:
                 for _ in progress_bar:
                     loss = self.continuous_model_step_func() / self.elbo_normalization_factor
@@ -404,7 +424,7 @@ class HybridInferenceTask(InferenceTask):
         median_rel_err = np.nan
         with tqdm.trange(self.hybrid_inference_params.log_emission_sampling_rounds,
                          desc="({0} epoch {1})".format(self.sampling_task_name, self.i_epoch),
-                         file=sys.stdout) as progress_bar:
+                         file=self.tqdm_out) as progress_bar:
             try:
                 for i_round in progress_bar:
                     update_to_estimator = self.sampler.draw()
@@ -450,7 +470,7 @@ class HybridInferenceTask(InferenceTask):
         iters_converged = False  # if internal loop is converged (weaker, does not imply global convergence)
         with tqdm.trange(self.hybrid_inference_params.max_calling_iters,
                          desc="({0} epoch {1})".format(self.calling_task_name, self.i_epoch),
-                         file=sys.stdout) as progress_bar:
+                         file=self.tqdm_out) as progress_bar:
             try:
                 for i_calling_iter in progress_bar:
                     caller_summary = self.caller.call()
