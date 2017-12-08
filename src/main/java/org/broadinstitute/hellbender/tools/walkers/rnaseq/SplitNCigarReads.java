@@ -7,7 +7,7 @@ import org.broadinstitute.barclay.argparser.Advanced;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.CommandLineProgramProperties;
 import org.broadinstitute.barclay.help.DocumentedFeature;
-import org.broadinstitute.hellbender.cmdline.programgroups.ExampleProgramGroup;
+import org.broadinstitute.hellbender.cmdline.programgroups.ReadDataProgramGroup;
 import org.broadinstitute.hellbender.engine.FeatureContext;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.engine.TwoPassReadWalker;
@@ -64,7 +64,7 @@ import static org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions.
 @CommandLineProgramProperties(
         summary = "Splits reads that contain Ns in their cigar string (e.g. spanning splicing events).",
         oneLineSummary = "Split Reads with N in Cigar",
-        programGroup = ExampleProgramGroup.class
+        programGroup = ReadDataProgramGroup.class
 )
 public final class SplitNCigarReads extends TwoPassReadWalker {
 

@@ -5,7 +5,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.samtools.SAMFileHeader;
 import org.broadinstitute.barclay.argparser.CommandLineProgramProperties;
 import org.broadinstitute.barclay.help.DocumentedFeature;
-import org.broadinstitute.hellbender.cmdline.programgroups.ExampleProgramGroup;
+import org.broadinstitute.hellbender.cmdline.programgroups.CoverageAnalysisProgramGroup;
 import org.broadinstitute.hellbender.engine.AlignmentContext;
 import org.broadinstitute.hellbender.engine.FeatureContext;
 import org.broadinstitute.hellbender.engine.LocusWalker;
@@ -78,7 +78,7 @@ import java.util.List;
 @CommandLineProgramProperties(
         summary = "Counts filtered reads at het sites for allele specific expression estimate",
         oneLineSummary = "Generates table of filtered base counts at het sites for allele specific expression",
-        programGroup = ExampleProgramGroup.class
+        programGroup = CoverageAnalysisProgramGroup.class
 )
 public class ASEReadCounter extends LocusWalker {
 

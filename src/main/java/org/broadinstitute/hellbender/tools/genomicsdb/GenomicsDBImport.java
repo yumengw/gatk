@@ -47,7 +47,7 @@ import java.util.function.Function;
  *
  * <p>The GATK4 Best Practice Workflow for SNP and Indel calling uses GenomicsDBImport to merge GVCFs from multiple samples.
  * GenomicsDBImport offers the same functionality as CombineGVCFs and comes from the <i>Intel-Broad Center for Genomics</i>.
- * The datastore transposes sample-centric variant information across genomic loci to make data more accessible to tools and to manual probing.
+ * The datastore transposes sample-centric variant information across genomic loci to make data more accessible to tools.
  * </p>
  *
  * <p>To query the contents of the GenomicsDB datastore, use
@@ -78,10 +78,10 @@ import java.util.function.Function;
  *  Provide each sample GVCF separately.
  *  <pre>
  *    gatk GenomicsDBImport \
- *      -V data/gvcfs/mother.g.vcf \
- *      -V data/gvcfs/father.g.vcf \
- *      -V data/gvcfs/son.g.vcf \
- *      --genomicsDBWorkspace my_database \
+ *      -V data/gvcfs/mother.g.vcf.gz \
+ *      -V data/gvcfs/father.g.vcf.gz \
+ *      -V data/gvcfs/son.g.vcf.gz \
+ *      -genomicsDBWorkspace my_database \
  *      --intervals 20
  *  </pre>
  *
