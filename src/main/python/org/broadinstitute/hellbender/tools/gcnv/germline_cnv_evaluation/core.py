@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 from gcnvkernel import Interval
-from typing import Optional, Set, Generator, List
+from typing import Optional, Set, Generator, Dict
 from intervaltree_bio import GenomeIntervalTree, IntervalTree
 from collections import namedtuple
 import logging
@@ -160,23 +160,23 @@ class GenericCNVCallSet:
         return call_set
 
     @staticmethod
-    def from_pickle(pickle_file: str) -> List['GenericCNVCallSet']:
+    def from_pickle(pickle_file: str) -> Dict[str, 'GenericCNVCallSet']:
         with open(pickle_file, 'rb') as f:
             unpickler = pickle.Unpickler(f)
-            call_set_list = list()
+            call_set_dict = dict()
             while True:
                 try:
                     pickle_bundle = unpickler.load()
-                    call_set_list.append(GenericCNVCallSet.from_genome_interval_tree(
-                        pickle_bundle.sample_name, pickle_bundle.genome_interval_tree, pickle_bundle.tags))
+                    call_set_dict[pickle_bundle.sample_name] = GenericCNVCallSet.from_genome_interval_tree(
+                        pickle_bundle.sample_name, pickle_bundle.genome_interval_tree, pickle_bundle.tags)
                 except EOFError:
                     break
-            return call_set_list
+            return call_set_dict
 
     @staticmethod
-    def to_pickle(pickle_file: str, call_set_list: List['GenericCNVCallSet']):
+    def to_pickle(pickle_file: str, call_set_dict: Dict[str, 'GenericCNVCallSet']):
         with open(pickle_file, 'wb') as f:
-            for call_set in call_set_list:
+            for call_set in call_set_dict.values():
                 pickle_bundle = GenericCNVCallSetPickleBundle(
                     call_set.sample_name,
                     call_set.tags,
