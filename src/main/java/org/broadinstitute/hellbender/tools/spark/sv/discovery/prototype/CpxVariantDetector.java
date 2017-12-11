@@ -7,16 +7,18 @@ import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.ImmutableList;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.SequenceUtil;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.variantcontext.VariantContextBuilder;
+import htsjdk.variant.vcf.VCFConstants;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.broadcast.Broadcast;
 import org.broadinstitute.hellbender.engine.datasources.ReferenceMultiSource;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
-import org.broadinstitute.hellbender.tools.spark.sv.discovery.AlignedContig;
-import org.broadinstitute.hellbender.tools.spark.sv.discovery.AlignmentInterval;
-import org.broadinstitute.hellbender.tools.spark.sv.discovery.ChimericAlignment;
-import org.broadinstitute.hellbender.tools.spark.sv.discovery.StrandSwitch;
+import org.broadinstitute.hellbender.tools.spark.sv.discovery.*;
+import org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants;
+import org.broadinstitute.hellbender.tools.spark.sv.utils.SVVCFWriter;
 import org.broadinstitute.hellbender.utils.IntervalUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -28,6 +30,9 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.broadinstitute.hellbender.tools.spark.sv.StructuralVariationDiscoveryArgumentCollection.DiscoverVariantsFromContigsAlignmentsSparkArgumentCollection.CHIMERIC_ALIGNMENTS_HIGHMQ_THRESHOLD;
+import static org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants.*;
 
 /**
  * This deals with the special case where a contig has multiple (> 2) alignments
@@ -50,8 +55,11 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         final JavaRDD<AnnotatedContig> annotatedContigs =
                 localAssemblyContigs.map(tig -> new AnnotatedContig(tig, broadcastSequenceDictionary.getValue()));
 
-        // TODO: 12/11/17 emit VCF record in the next commit
         try {
+            SVVCFWriter.writeVCF(annotatedContigs.map(tig -> tig.toVariantContext(broadcastReference.getValue())).collect(),
+                    vcfOutputFileName, broadcastSequenceDictionary.getValue(), toolLogger);
+
+            // for easier view when debugging, will be taken out in the final commit.
             Files.write(Paths.get(Paths.get(vcfOutputFileName).getParent().toAbsolutePath().toString() + "/cpxEvents.txt"),
                     () -> annotatedContigs
                             .sortBy(tig -> tig.tigWithInsMappings.contig.contigName, true, 1)
@@ -60,9 +68,6 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         } catch (final IOException ioe) {
             throw new UserException.CouldNotCreateOutputFile("Could not save filtering results to file", ioe);
         }
-
-        // TODO: 11/23/17 take insertion mappings from the input and add them to VC
-
     }
 
     /**
@@ -183,14 +188,85 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
             }
         }
 
+        public VariantContext toVariantContext(final ReferenceMultiSource reference) throws IOException {
+
+            final SimpleInterval affectedRefRegion = getAffectedRefRegion();
+            final CpxVariantType cpxVariant = new CpxVariantType(affectedRefRegion, typeSpecificExtraAttributes());
+            final SimpleInterval pos = new SimpleInterval(affectedRefRegion.getContig(), affectedRefRegion.getStart(), affectedRefRegion.getStart());
+
+            final VariantContextBuilder vcBuilder = new VariantContextBuilder()
+                    .chr(affectedRefRegion.getContig()).start(affectedRefRegion.getStart()).stop(affectedRefRegion.getEnd())
+                    .alleles(AnnotatedVariantProducer.produceAlleles(pos, reference, cpxVariant))
+                    .id(cpxVariant.getInternalVariantId())
+                    .attribute(SVTYPE, cpxVariant.toString())
+                    .attribute(VCFConstants.END_KEY, affectedRefRegion.getEnd())
+                    .attribute(SVLEN, cpxVariant.getSVLength())
+                    .attribute(SEQ_ALT_HAPLOTYPE, new String(altSeq));
+
+            cpxVariant.getTypeSpecificAttributes().forEach(vcBuilder::attribute);
+
+            // evidence used for producing the novel adjacency
+
+            return vcBuilder.make();
+        }
+
+        private SimpleInterval getAffectedRefRegion() {
+            final SimpleInterval pos, end;
+            if (referenceSegmentsAndEventDescription.referenceSegments.isEmpty()) {
+                if( eventPrimaryChromosomeSegmentingLocations.size() != 2 )
+                    throw new GATKException("Inference seems to be wrong: " +
+                            "affected reference region is not segmented but segmenting locations are not the expected two\n" +
+                    toString());
+                pos = eventPrimaryChromosomeSegmentingLocations.get(0);
+                end = eventPrimaryChromosomeSegmentingLocations.get(1);
+            } else {
+                pos = referenceSegmentsAndEventDescription.referenceSegments.get(0);
+                end = referenceSegmentsAndEventDescription.referenceSegments.get(referenceSegmentsAndEventDescription.referenceSegments.size() - 1);
+            }
+            return new SimpleInterval(pos.getContig(), pos.getStart(), end.getEnd());
+        }
+
+        private Map<String, String> typeSpecificExtraAttributes() {
+            final Map<String, String> attributes = new HashMap<>();
+            attributes.put(CPX_EVENT_ALT_ARRANGEMENTS,
+                            referenceSegmentsAndEventDescription.getAltArrangementString());
+            if ( ! referenceSegmentsAndEventDescription.referenceSegments.isEmpty() ) {
+                attributes.put(CPX_SV_REF_SEGMENTS,
+                        String.join(VCFConstants.INFO_FIELD_ARRAY_SEPARATOR,
+                                referenceSegmentsAndEventDescription.referenceSegments.stream()
+                                        .map(SimpleInterval::toString).collect(Collectors.toList())));
+            }
+            return attributes;
+        }
+
+        private Map<String, String> dummy() {
+
+            final Map<String, String> attributeMap = new HashMap<>();
+            attributeMap.put(GATKSVVCFConstants.TOTAL_MAPPINGS,    "1");
+            attributeMap.put(GATKSVVCFConstants.HQ_MAPPINGS,       tigWithInsMappings.contig.alignmentIntervals.stream().mapToInt(ai -> ai.mapQual).anyMatch( mq -> mq < CHIMERIC_ALIGNMENTS_HIGHMQ_THRESHOLD ) ? "0" : "1");
+            attributeMap.put(GATKSVVCFConstants.MAPPING_QUALITIES, tigWithInsMappings.contig.alignmentIntervals.stream().map(ai -> String.valueOf(ai.mapQual)).collect(Collectors.joining(VCFConstants.INFO_FIELD_ARRAY_SEPARATOR)));
+            attributeMap.put(GATKSVVCFConstants.ALIGN_LENGTHS,     tigWithInsMappings.contig.alignmentIntervals.stream().map(ai -> String.valueOf(ai.getSizeOnRead())).collect(Collectors.joining(VCFConstants.INFO_FIELD_ARRAY_SEPARATOR)));
+            attributeMap.put(GATKSVVCFConstants.MAX_ALIGN_LENGTH,  String.valueOf(tigWithInsMappings.contig.alignmentIntervals.stream().mapToInt(AlignmentInterval::getSizeOnRead).max().orElse(0)));
+            attributeMap.put(GATKSVVCFConstants.CONTIG_NAMES,      tigWithInsMappings.contig.contigName);
+
+            // TODO: 12/11/17 integrate these with those that survived the alignment filtering step?
+            // known insertion mappings from filtered out alignments
+            if ( !tigWithInsMappings.insertionMappings.isEmpty() ) {
+                attributeMap.put(INSERTED_SEQUENCE_MAPPINGS,
+                        String.join(VCFConstants.INFO_FIELD_ARRAY_SEPARATOR, tigWithInsMappings.insertionMappings));
+            }
+
+            return attributeMap;
+        }
+
         @Override
         public String toString() {
             return "\nContig:\t" + tigWithInsMappings.toString() +
-                    "\n" + basicInfo.toString() +
+                    "\nBasicInfo:\t" + basicInfo.toString() +
                     "\nJumps:\t" + ( jumps == null ? "NULL" : jumps.toString()) +
                     "\nSeg.Boundaries:\t" + ( eventPrimaryChromosomeSegmentingLocations == null ? "NULL" : eventPrimaryChromosomeSegmentingLocations.toString()) +
                     "\n" + (referenceSegmentsAndEventDescription == null ? "NULL" : referenceSegmentsAndEventDescription.toString()) +
-                    "\n" + (altSeq == null ? "NULL" : new String(altSeq));
+                    "\nAlt.Seg.:\t" + (altSeq == null ? "NULL" : new String(altSeq));
         }
 
         AnnotatedContig(final Kryo kryo, final Input input) {
@@ -271,7 +347,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
 
         @Override
         public String toString() {
-            return "BasicInfo:\tprimary chr: " + eventPrimaryChromosome + "\tstrand rep:" + (forwardStrandRep ? '+' : '-') +
+            return "primary chr: " + eventPrimaryChromosome + "\tstrand rep:" + (forwardStrandRep ? '+' : '-') +
                     "\talpha: " + alpha.toString() +  "\tomega: " + omega.toString();
         }
 
@@ -486,10 +562,14 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
             this.eventDescriptions = eventDescriptions;
         }
 
+        String getAltArrangementString() {
+            return String.join(VCFConstants.INFO_FIELD_ARRAY_SEPARATOR, eventDescriptions);
+        }
+
         @Override
         public String toString() {
             return "Segments:\t" + referenceSegments.toString() +
-                    "\nEvents:\t" + eventDescriptions.toString();
+                    "\nArrangements:\t" + eventDescriptions.toString();
         }
 
         ReferenceSegmentsAndEventDescription(final Kryo kryo, final Input input) {
