@@ -72,6 +72,9 @@ public class StrandArtifact extends GenotypeAnnotation implements StandardMutect
 
         // We use the allele with highest LOD score
         final double[] tumorLods = GATKProtectedVariantContextUtils.getAttributeAsDoubleArray(vc, GATKVCFConstants.TUMOR_LOD_KEY, () -> null, -1);
+        if (tumorLods == null){
+            return;
+        }
         final int indexOfMaxTumorLod = MathUtils.maxElementIndex(tumorLods);
         final Allele altAlelle = vc.getAlternateAllele(indexOfMaxTumorLod);
 
