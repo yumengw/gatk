@@ -31,7 +31,7 @@ public final class AlignedContig {
                          final boolean hasEquallyGoodAlnConfigurations) {
         this.contigName = contigName;
         this.contigSequence = contigSequence;
-        this.alignmentIntervals = Utils.stream(alignmentIntervals)
+        this.alignmentIntervals = Utils.stream( Utils.nonNull(alignmentIntervals) )
                 .sorted(getAlignmentIntervalComparator()).collect(Collectors.toList());
         this.hasEquallyGoodAlnConfigurations = hasEquallyGoodAlnConfigurations;
     }
@@ -70,6 +70,23 @@ public final class AlignedContig {
         return alignmentIntervals.size() > 1;
     }
 
+    /**
+     * @return first alignment of the contig, {@code null} if it is unmapped.
+     */
+    public AlignmentInterval getHeadAlignment() {
+        if (alignmentIntervals.isEmpty())
+            return null;
+        return alignmentIntervals.get(0);
+    }
+
+    /**
+     * @return last alignment of the contig, {@code null} if it is unmapped.
+     */
+    public AlignmentInterval getTailAlignment() {
+        if (alignmentIntervals.isEmpty())
+            return null;
+        return alignmentIntervals.get(alignmentIntervals.size() - 1);
+    }
 
     @Override
     public String toString() {

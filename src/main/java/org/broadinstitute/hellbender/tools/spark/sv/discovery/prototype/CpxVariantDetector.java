@@ -50,7 +50,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         final JavaRDD<AnnotatedContig> annotatedContigs =
                 localAssemblyContigs.map(tig -> new AnnotatedContig(tig, broadcastSequenceDictionary.getValue()));
 
-        // TODO: 11/23/17 should have output VCF here but need feedback on format so save the effort for now and output as in AnnotatedContig.toString() instead
+        // TODO: 12/11/17 emit VCF record in the next commit
         try {
             Files.write(Paths.get(Paths.get(vcfOutputFileName).getParent().toAbsolutePath().toString() + "/cpxEvents.txt"),
                     () -> annotatedContigs
@@ -65,6 +65,20 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
 
     }
 
+    /**
+     * Fundamental class of complex variant interpretation and alt haplotype extraction.
+     *
+     * <p>
+     *     The general strategy is to walk on the affected reference region
+     *     as guided by the alignments along the 5-3 direction of assembly contig.
+     *     The walking has two basic types: sliding (alignment block),
+     *     and jumping (two chimeric alignment joint on the read).
+     *     By walking along the contig, we extract the jumps, then
+     *     segment the affected region with segments bounded by the jumps,
+     *     and walk along the alignments one more time to figure out
+     *     how the segments are arranged on the sample/alt-haplotype.
+     * </p>
+     */
     @DefaultSerializer(AnnotatedContig.Serializer.class)
     private static final class AnnotatedContig {
         private static final AssemblyContigWithFineTunedAlignments.Serializer contigSerializer =
@@ -98,8 +112,8 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
             final AlignedContig sourceTig = tigWithInsMappings.contig;
             final List<AlignmentInterval> deOverlappedAlignmentConfiguration =
                     deOverlapAlignments(sourceTig.alignmentIntervals, refSequenceDictionary);
-            final AlignedContig contig = new AlignedContig(sourceTig.contigName, sourceTig.contigSequence, deOverlappedAlignmentConfiguration,
-                                            sourceTig.hasEquallyGoodAlnConfigurations);
+            final AlignedContig contig = new AlignedContig(sourceTig.contigName, sourceTig.contigSequence,
+                    deOverlappedAlignmentConfiguration, sourceTig.hasEquallyGoodAlnConfigurations);
             this.tigWithInsMappings = new AssemblyContigWithFineTunedAlignments(contig, tigWithInsMappings.insertionMappings);
 
             this.basicInfo = new BasicInfo(contig);
@@ -116,6 +130,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                 final AlignmentInterval two = iterator.next();
                 // TODO: 11/5/17 an edge case is possible where the best configuration contains two alignments,
                 //       one of which contains a large gap, and since the gap split happens after the configuration scoring,
+                //       (that gap split happens after scoring is due to how MQ and AS are used in the scoring step, gap-split alignment cannot use originating alignment's values, but it takes time to recompute)
                 //       one of the alignment from the gap split may be contained in the other original alignment, leading to problems;
                 //       here we first skip it
                 if (two.alnModType.equals(AlnModType.FROM_SPLIT_GAPPED_ALIGNMENT)) {
@@ -132,8 +147,10 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         }
 
         /**
+         * The process of annotation is the processing of making sense of what happened.
+         *
          * <p>
-         *     Segment affected reference regions by jumping locations, by
+         *     Segment affected reference region by jumping locations, by
          *     <ul>
          *         <li>
          *             extract jumping locations on reference from de-overlapped alignments
@@ -226,16 +243,16 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
     @DefaultSerializer(BasicInfo.Serializer.class)
     private static final class BasicInfo {
 
-        final String eventPrimaryChromosome; // where the head and tail alignments are mapped to, mappings to other chromosomes of a particular assembly contig will be considered insertion/MEI
+        final String eventPrimaryChromosome; // where the head and tail alignments are mapped to, mappings to other chromosomes will be considered insertion/MEI
         final boolean forwardStrandRep;     // if the signaling assembly contig is a forward strand representation
         final SimpleInterval alpha;         // length-1 interval for the starting ref location of the head/tail alignment if the signaling assembly contig is a '+'/'-' representation
         final SimpleInterval omega;         // length-1 interval for the ending   ref location of the tail/head alignment if the signaling assembly contig is a '+'/'-' representation
-        final int alphaOnRead;              // position on read corresponding to alpha
-        final int omegaOnRead;              // position on read corresponding to omega
 
         BasicInfo(final AlignedContig contig) {
-            final AlignmentInterval head = contig.alignmentIntervals.get(0),
-                                    tail = contig.alignmentIntervals.get(contig.alignmentIntervals.size()-1);
+            final AlignmentInterval head = contig.getHeadAlignment();
+            final AlignmentInterval tail = contig.getTailAlignment();
+            if (head == null || tail == null)
+                throw new GATKException("Head or tail alignment is null from contig:\n" + contig.toString());
 
             eventPrimaryChromosome = head.referenceSpan.getContig();
             forwardStrandRep = head.forwardStrand;
@@ -246,24 +263,16 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                 alpha = new SimpleInterval(tail.referenceSpan.getContig(), tail.referenceSpan.getStart(), tail.referenceSpan.getStart());
                 omega = new SimpleInterval(head.referenceSpan.getContig(), head.referenceSpan.getEnd(), head.referenceSpan.getEnd());
             }
-
-            alphaOnRead = head.startInAssembledContig;
-            omegaOnRead = tail.endInAssembledContig;
         }
 
         SimpleInterval getRefRegionBoundedByAlphaAndOmega() {
             return new SimpleInterval(eventPrimaryChromosome, alpha.getStart(), omega.getEnd());
         }
 
-        Tuple2<Integer, Integer> getAlphaAndOmegaPosOnRead() {
-            return new Tuple2<>(alphaOnRead, omegaOnRead);
-        }
-
         @Override
         public String toString() {
             return "BasicInfo:\tprimary chr: " + eventPrimaryChromosome + "\tstrand rep:" + (forwardStrandRep ? '+' : '-') +
-                    "\talpha: " + alpha.toString() +  "\tomega: " + omega.toString() +
-                    "\talphaOnRead: " + alphaOnRead + "\tomegaOnRead: " + omegaOnRead;
+                    "\talpha: " + alpha.toString() +  "\tomega: " + omega.toString();
         }
 
         BasicInfo(final Kryo kryo, final Input input) {
@@ -271,8 +280,6 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
             forwardStrandRep = input.readBoolean();
             alpha = kryo.readObject(input, SimpleInterval.class);
             omega = kryo.readObject(input, SimpleInterval.class);
-            alphaOnRead = input.readInt();
-            omegaOnRead = input.readInt();
         }
 
         void serialize(final Kryo kryo, final Output output) {
@@ -280,8 +287,6 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
             output.writeBoolean(forwardStrandRep);
             kryo.writeObject(output, alpha);
             kryo.writeObject(output, omega);
-            output.writeInt(alphaOnRead);
-            output.writeInt(omegaOnRead);
         }
 
         public static final class Serializer extends com.esotericsoftware.kryo.Serializer<BasicInfo> {
@@ -305,9 +310,9 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
      * <p>
      * A jump can be:
      * <ul>
-     *     <li>gapped--meaning a part of read is uncovered by neighboring AI's;</li>
-     *     <li>connected--meaning neighboring--but not overlapping on the read--AI's leave no base on the read uncovered;</li>
-     *     <li>retracting--meaning neighboring AI's overlap on the read, pointing to homology between their ref span</li>
+     *     <li>gapped--meaning a part of read is uncovered by neighboring alignments;</li>
+     *     <li>connected--meaning neighboring alignments leave no base on the read uncovered, but does not overlap on the read;</li>
+     *     <li>retracting--meaning neighboring alignments overlap on the read, pointing to homology between their ref span</li>
      * </ul>
      * Among them, retracting jumps are the most difficult to deal with, mainly due to how to have a consistent
      * homology-yielding scheme.
@@ -349,7 +354,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                     start = new SimpleInterval(one.referenceSpan.getContig(), one.referenceSpan.getStart(), one.referenceSpan.getStart());
                     landing = new SimpleInterval(two.referenceSpan.getContig(), two.referenceSpan.getStart(), two.referenceSpan.getStart());
                     break;
-                    default: throw new NoSuchElementException("seeing a strand switch that doesn't make sense");
+                default: throw new NoSuchElementException("seeing a strand switch that doesn't make sense");
             }
 
             gapSize = Math.max(0, two.startInAssembledContig - one.endInAssembledContig - 1);
@@ -394,8 +399,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
 
     /**
      * Each pair of neighboring reference locations are meant to be used closed, i.e. [a, b].
-     * The returned list of {@link Jump}'s are ordered along the alignments of the contig
-     * if the contig is '+' strand representation, or reversed if the contig is '-' strand representation.
+     * The returned list of {@link Jump}'s are ordered along the alignments of the contig.
      */
     private static List<Jump> extractJumpsOnReference(final List<AlignmentInterval> alignmentConfiguration) {
 
@@ -411,6 +415,12 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         return unsortedJumps;
     }
 
+    /**
+     * Given {@code jumps} extracted from the chimeric alignments,
+     * filter out those starting or landing locations that are
+     * disjoint from region {@link BasicInfo#getRefRegionBoundedByAlphaAndOmega()}.
+     * What's left, and returned, will be used as boundaries for constructing segments.
+     */
     private static List<SimpleInterval> extractSegmentingRefLocationsOnEventPrimaryChromosome(
             final List<Jump> jumps,
             final BasicInfo basicInfo,
@@ -419,7 +429,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         return jumps.stream()
                 .flatMap(jump -> Stream.of(jump.start, jump.landing))
                 .filter(loc -> !alignmentIsDisjointFromAlphaOmega(loc, regionBoundedByAlphaAndOmega))
-                .sorted((one, two) -> IntervalUtils.compareLocatables(one, two, refSequenceDictionary))
+                .sorted((one, two) -> IntervalUtils.compareLocatables(one, two, refSequenceDictionary)) // alignments are sorted
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -427,7 +437,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
     // =================================================================================================================
 
     /**
-     * This struct contains two pieces of information that provides interpretation of the event:
+     * This struct contains two key pieces of information that provides interpretation of the event:
      * <p>
      *     Ordered list of reference segments on the event primary chromosome that
      *     are bounded by segmenting locations extracted above from {@link Jump}'s.
@@ -452,11 +462,12 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
      *         <li>
      *             a string that conforms to the format by {@link SimpleInterval#toString()}
      *             for describing a string of sequence that could map to that particular location,
-     *             which is disjoint to the region returned by {@link BasicInfo#getRefRegionBoundedByAlphaAndOmega()}.
+     *             which is disjoint from the region returned by {@link BasicInfo#getRefRegionBoundedByAlphaAndOmega()}.
      *         </li>
      *         <li>
-     *             {@link #UNMAPPED_INSERTION},
-     *             used for indicating a part of the assembly contig is uncovered by any (high quality) mappings.
+     *             a string literal of the form {@link #UNMAPPED_INSERTION%d},
+     *             used for indicating a part of the assembly contig is uncovered by any (high quality) mappings,
+     *             with %d indicating how many bases unmapped
      *         </li>
      *     </ul>
      * </p>
@@ -543,14 +554,14 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                     "run into unseen case where only one reference segmenting location is found but its size is not 1:\n"
                             + contigAlignments.toString());
 
-        // TODO: 12/8/17 bug: using wrong criterion, should check that only head and tail overlaps with region by BasicInfo#getRefRegionBoundedByAlphaAndOmega(), but correct it in the next commit
-        final String eventPrimaryChromosome = basicInfo.eventPrimaryChromosome;
-        final boolean onlyHeadAndTailShareOneBaseOnRef =
-                contigAlignments.stream()
-                        .filter(ai -> ai.referenceSpan.getContig().equals(eventPrimaryChromosome)).count() == 2;
-        if ( ! onlyHeadAndTailShareOneBaseOnRef )
+        final SimpleInterval refRegionBoundedByAlphaAndOmega = basicInfo.getRefRegionBoundedByAlphaAndOmega();
+        final boolean allMiddleAlignmentsDisjointFromAlphaOmega =
+                contigAlignments
+                        .subList(1, contigAlignments.size() - 1).stream()
+                        .allMatch(ai -> alignmentIsDisjointFromAlphaOmega(ai.referenceSpan, refRegionBoundedByAlphaAndOmega));
+        if ( ! allMiddleAlignmentsDisjointFromAlphaOmega )
             throw new UnhandledCaseSeen("run into unseen case where only one reference segmenting location is found" +
-                    " but some middle alignments are overlapping valid region:\n"
+                    " but some middle alignments are overlapping alpha-omega region:\t" + refRegionBoundedByAlphaAndOmega + "\n"
                     + contigAlignments.toString());
 
 
@@ -566,6 +577,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                                 return ai.forwardStrand ? "-"+ai.referenceSpan.toString() : ai.referenceSpan.toString();
                         }).collect(Collectors.toList());
 
+        // the single base overlap from head and tail
         description.add(0, "1");
         description.add("1");
         return new ReferenceSegmentsAndEventDescription(segments, description);
@@ -573,8 +585,9 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
     }
 
     /**
-     * For dealing with case where multiple alignments of the assembly contig are overlapping with
+     * For dealing with case where at least one middle alignments of the assembly contig are overlapping with
      * the region returned by {@link BasicInfo#getRefRegionBoundedByAlphaAndOmega()}.
+     * This is contrary to the case handled in {@link #onlyHeadAndTailShareOneBaseOnRef(BasicInfo, List, SimpleInterval)}.
      */
     private static ReferenceSegmentsAndEventDescription multipleAlignmentsInAlphaAndOmegaRegion(final BasicInfo basicInfo,
                                                                                                 final List<AlignmentInterval> contigAlignments,
@@ -597,6 +610,9 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         SimpleInterval leftBoundary = iterator.next();
         while (iterator.hasNext()) {
             final SimpleInterval rightBoundary = iterator.next();
+            // there shouldn't be a segment constructed if two segmenting locations are adjacent to each other on the reference
+            // this could happen when (in the simplest case), two alignments are separated by a mapped insertion (hence 3 total alignments),
+            // and the two alignments' ref span are connected
             if (rightBoundary.getStart() - leftBoundary.getEnd() > 1) {
                 segments.add(new SimpleInterval(eventPrimaryChromosome, leftBoundary.getStart(), rightBoundary.getStart()));
             }
@@ -651,7 +667,7 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
                 for ( int i = start; i != stop; i += step ) {
                     final SimpleInterval currentSegment = segments.get(i);
                     // if current segment is contained in current alignment, note it down
-                    if (alignmentContainsSegment(alignment.referenceSpan, currentSegment)) {
+                    if ( alignment.referenceSpan.contains(currentSegment) ) {
                         if (basicInfo.forwardStrandRep) // +1 below on i for 1-based description, no magic
                             descriptions.add( String.valueOf((alignment.forwardStrand ? 1 : -1) * (i+1)) );
                         else
@@ -690,13 +706,6 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
         return descriptions;
     }
 
-    // avoid case where segment and alignment ref span overlap only on one boundary base
-    private static boolean alignmentContainsSegment(final SimpleInterval alignmentRefSpan, final SimpleInterval segment) {
-        return alignmentRefSpan.overlaps(segment)
-                &&
-                alignmentRefSpan.intersect(segment).size() == segment.size();
-    }
-
     private static boolean alignmentIsDisjointFromAlphaOmega(final SimpleInterval alignmentRefSpan,
                                                              final SimpleInterval regionBoundedByAlphaAndOmega) {
         return !alignmentRefSpan.overlaps(regionBoundedByAlphaAndOmega);
@@ -704,14 +713,17 @@ final class CpxVariantDetector implements VariantDetectorFromLocalAssemblyContig
 
     // =================================================================================================================
 
+    /**
+     * Extract alt haplotype sequence from the {@code tigWithInsMappings} to accompany the interpreted events.
+     */
     private static byte[] extractAltHaplotypeSeq(final AssemblyContigWithFineTunedAlignments tigWithInsMappings,
                                                  final List<SimpleInterval> segments,
                                                  final BasicInfo basicInfo) {
 
-
-        final List<AlignmentInterval> alignments = tigWithInsMappings.contig.alignmentIntervals;
-        final AlignmentInterval head = alignments.get(0);
-        final AlignmentInterval tail = alignments.get(alignments.size() - 1);
+        final AlignmentInterval head = tigWithInsMappings.contig.getHeadAlignment();
+        final AlignmentInterval tail = tigWithInsMappings.contig.getTailAlignment();
+        if (head == null || tail == null)
+            throw new GATKException("Head or tail alignment is null from contig:\n" + tigWithInsMappings.contig.toString());
 
         if (segments.isEmpty()) { // case where middle alignments all map to disjoint locations
             final int start = head.endInAssembledContig;
