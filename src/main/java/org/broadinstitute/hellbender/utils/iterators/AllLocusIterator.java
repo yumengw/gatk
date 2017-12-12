@@ -72,6 +72,7 @@ public class AllLocusIterator implements Iterator<AlignmentContext> {
     private AlignmentContext advance() {
         // If we're out of loci, pull on the nested locus iterator until it's exhausted (caller may be relying on this),
         // and then return null
+        //todo is this weird?
         if ( currentPosition > interval.getEnd() ) {
             while ( nestedLocusIterator.hasNext() ) {
                 nestedLocusIterator.next();

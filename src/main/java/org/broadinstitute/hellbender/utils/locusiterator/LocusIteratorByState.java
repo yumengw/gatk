@@ -4,8 +4,6 @@ import com.google.common.annotations.VisibleForTesting;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.util.Locatable;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hellbender.engine.AlignmentContext;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -45,11 +43,6 @@ import java.util.*;
 public final class LocusIteratorByState implements Iterator<AlignmentContext> {
     /** Indicates that we shouldn't do any downsampling */
     public static final LIBSDownsamplingInfo NO_DOWNSAMPLING = new LIBSDownsamplingInfo(false, -1);
-
-    /**
-     * our log, which we want to capture anything from this class
-     */
-    private static final Logger logger = LogManager.getLogger(LocusIteratorByState.class);
 
     // -----------------------------------------------------------------------------------------------------------------
     //
@@ -362,7 +355,7 @@ public final class LocusIteratorByState implements Iterator<AlignmentContext> {
      * @param pos the genomic position of the current alignment
      * @return true if the read should be excluded from the pileup, false otherwise
      */
-    private boolean dontIncludeReadInPileup(final GATKRead rec, final long pos) {
+    private static boolean dontIncludeReadInPileup(final GATKRead rec, final long pos) {
         return ReadUtils.isBaseInsideAdaptor(rec, pos);
     }
 

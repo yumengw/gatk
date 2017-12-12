@@ -159,7 +159,7 @@ public final class ReferenceConfidenceModel {
         final int ploidy = ploidyModel.samplePloidy(0); // the first sample = the only sample in reference-confidence mode.
 
         final SimpleInterval refSpan = activeRegion.getSpan();
-        final List<ReadPileup> refPileups = getPileupsOverReference(refHaplotype, calledHaplotypes, paddedReferenceLoc, activeRegion, refSpan, readLikelihoods);
+        final List<ReadPileup> refPileups = getPileupsOverReference(refHaplotype, calledHaplotypes, activeRegion, refSpan, readLikelihoods);
         final byte[] ref = refHaplotype.getBases();
         final List<VariantContext> results = new ArrayList<>(refSpan.size());
         final String sampleName = readLikelihoods.getSample(0);
@@ -295,11 +295,11 @@ public final class ReferenceConfidenceModel {
      * @param hqSoftClips running average data structure (can be null) to collect information about the number of high quality soft clips
      * @return a RefVsAnyResult genotype call.
      */
-    public RefVsAnyResult calcGenotypeLikelihoodsOfRefVsAny(final int ploidy,
-                                                        final ReadPileup pileup,
-                                                        final byte refBase,
-                                                        final byte minBaseQual,
-                                                        final MathUtils.RunningAverage hqSoftClips) {
+    public static RefVsAnyResult calcGenotypeLikelihoodsOfRefVsAny(final int ploidy,
+                                                                   final ReadPileup pileup,
+                                                                   final byte refBase,
+                                                                   final byte minBaseQual,
+                                                                   final MathUtils.RunningAverage hqSoftClips) {
 
         final int likelihoodCount = ploidy + 1;
         final double log10Ploidy = MathUtils.log10(ploidy);
@@ -321,7 +321,7 @@ public final class ReferenceConfidenceModel {
         return result;
     }
 
-    private void applyPileupElementRefVsNonRefLikelihoodAndCount(final byte refBase, final int likelihoodCount, final double log10Ploidy, final RefVsAnyResult result, final PileupElement element, final byte qual, final MathUtils.RunningAverage hqSoftClips) {
+    private static void applyPileupElementRefVsNonRefLikelihoodAndCount(final byte refBase, final int likelihoodCount, final double log10Ploidy, final RefVsAnyResult result, final PileupElement element, final byte qual, final MathUtils.RunningAverage hqSoftClips) {
         final boolean isAlt = element.getBase() != refBase || element.isDeletion() || element.isBeforeDeletionStart()
                 || element.isAfterDeletionEnd() || element.isBeforeInsertion() || element.isAfterInsertion() || element.isNextToSoftClip();
         final double referenceLikelihood;
@@ -354,11 +354,10 @@ public final class ReferenceConfidenceModel {
      * Get a list of pileups that span the entire active region span, in order, one for each position
      */
     private List<ReadPileup> getPileupsOverReference(final Haplotype refHaplotype,
-                                                           final Collection<Haplotype> calledHaplotypes,
-                                                           final SimpleInterval paddedReferenceLoc,
-                                                           final AssemblyRegion activeRegion,
-                                                           final SimpleInterval activeRegionSpan,
-                                                           final ReadLikelihoods<Haplotype> readLikelihoods) {
+                                                     final Collection<Haplotype> calledHaplotypes,
+                                                     final AssemblyRegion activeRegion,
+                                                     final SimpleInterval activeRegionSpan,
+                                                     final ReadLikelihoods<Haplotype> readLikelihoods) {
         Utils.validateArg(calledHaplotypes.contains(refHaplotype), "calledHaplotypes must contain the refHaplotype");
         Utils.validateArg(readLikelihoods.numberOfSamples() == 1, () -> "readLikelihoods must contain exactly one sample but it contained " + readLikelihoods.numberOfSamples());
 
@@ -391,11 +390,10 @@ public final class ReferenceConfidenceModel {
      * @return a VariantContext, or null if none overlaps
      */
     @VisibleForTesting
-    VariantContext getOverlappingVariantContext(final Locatable curPos, final Collection<VariantContext> maybeOverlapping) {
-        final SimpleInterval curPosSI = new SimpleInterval(curPos);
+    static VariantContext getOverlappingVariantContext(final Locatable curPos, final Collection<VariantContext> maybeOverlapping) {
         VariantContext overlaps = null;
         for ( final VariantContext vc : maybeOverlapping ) {
-            if ( curPosSI.overlaps(vc) ) {
+            if ( curPos.overlaps(vc) ) {
                 if ( overlaps == null || vc.getStart() > overlaps.getStart() ) {
                     overlaps = vc;
                 }

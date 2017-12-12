@@ -30,7 +30,6 @@ import java.util.*;
  * and malformed reads must be filtered out).
  */
 public class AssemblyRegionIterator implements Iterator<AssemblyRegion> {
-    private static final Logger logger = LogManager.getLogger(AssemblyRegionIterator.class);
 
     private final Shard<GATKRead> readShard;
     private final SAMFileHeader readHeader;
@@ -40,9 +39,7 @@ public class AssemblyRegionIterator implements Iterator<AssemblyRegion> {
     private final int minRegionSize;
     private final int maxRegionSize;
     private final int assemblyRegionPadding;
-    private final double activeProbThreshold;
-    private final int maxProbPropagationDistance;
-    
+
     private AssemblyRegion readyRegion;
     private Queue<AssemblyRegion> pendingRegions;
     private List<GATKRead> previousRegionReads;
@@ -96,8 +93,6 @@ public class AssemblyRegionIterator implements Iterator<AssemblyRegion> {
         this.minRegionSize = minRegionSize;
         this.maxRegionSize = maxRegionSize;
         this.assemblyRegionPadding = assemblyRegionPadding;
-        this.activeProbThreshold = activeProbThreshold;
-        this.maxProbPropagationDistance = maxProbPropagationDistance;
 
         this.readyRegion = null;
         this.previousRegionReads = null;

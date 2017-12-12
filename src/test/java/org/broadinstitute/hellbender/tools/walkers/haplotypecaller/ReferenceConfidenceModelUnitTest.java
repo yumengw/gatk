@@ -185,7 +185,7 @@ public final class ReferenceConfidenceModelUnitTest extends GATKBaseTest {
 
     private void checkOverlapping(final int pos, Collection<VariantContext> calls, final VariantContext expected) {
         final GenomeLoc loc = parser.createGenomeLoc(parser.getSequenceDictionary().getSequences().get(0).getSequenceName(), pos, pos);
-        final VariantContext actual = model.getOverlappingVariantContext(loc, calls);
+        final VariantContext actual = ReferenceConfidenceModel.getOverlappingVariantContext(loc, calls);
         Assert.assertEquals(actual, expected);
     }
 
@@ -357,8 +357,8 @@ public final class ReferenceConfidenceModelUnitTest extends GATKBaseTest {
 
         for ( int i = 0; i < loc.size(); i++ ) {
             final GenomeLoc curPos = parser.createGenomeLoc(loc.getContig(), loc.getStart() + i);
-            final VariantContext call = model.getOverlappingVariantContext(curPos, calls);
-            final VariantContext refModel = model.getOverlappingVariantContext(curPos, contexts);
+            final VariantContext call = ReferenceConfidenceModel.getOverlappingVariantContext(curPos, calls);
+            final VariantContext refModel = ReferenceConfidenceModel.getOverlappingVariantContext(curPos, contexts);
 
             if ( ! data.getActiveRegion().getSpan().contains(curPos) ) {
                 // part of the extended interval, but not the full interval

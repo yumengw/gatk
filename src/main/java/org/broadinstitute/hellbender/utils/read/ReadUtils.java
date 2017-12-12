@@ -495,7 +495,7 @@ public final class ReadUtils {
         }
     }
 
-    public static int CANNOT_COMPUTE_ADAPTOR_BOUNDARY = Integer.MIN_VALUE;
+    public static final int CANNOT_COMPUTE_ADAPTOR_BOUNDARY = Integer.MIN_VALUE;
 
     /**
      * Can the adaptor sequence of read be reliably removed from the read based on the alignment of

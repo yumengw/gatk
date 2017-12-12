@@ -147,6 +147,7 @@ public final class HaplotypeCaller extends AssemblyRegionWalker {
     public static final int DEFAULT_MAX_READS_PER_ALIGNMENT = 50;
     public static final double DEFAULT_ACTIVE_PROB_THRESHOLD = 0.002;
     public static final int DEFAULT_MAX_PROB_PROPAGATION_DISTANCE = 50;
+
     @ArgumentCollection
     private HaplotypeCallerArgumentCollection hcArgs = new HaplotypeCallerArgumentCollection();
 
@@ -208,7 +209,7 @@ public final class HaplotypeCaller extends AssemblyRegionWalker {
         hcEngine.writeHeader(vcfWriter, sequenceDictionary, getDefaultToolVCFHeaderLines());
     }
 
-    private static CachingIndexedFastaSequenceFile getReferenceReader(ReferenceInputArgumentCollection referenceArguments) {
+    private static CachingIndexedFastaSequenceFile getReferenceReader(final ReferenceInputArgumentCollection referenceArguments) {
         final CachingIndexedFastaSequenceFile referenceReader;
         final File reference = new File(referenceArguments.getReferenceFileName());
         try {
