@@ -181,6 +181,7 @@ task DetermineGermlineContigPloidyCaseMode {
 
     # Runtime parameters
     Int? mem
+    Int? cpu
     String gatk_docker
     Int? preemptible_attempts
     Int? disk_space_gb
@@ -244,6 +245,7 @@ task GermlineCNVCallerCaseMode {
 
     # Runtime parameters
     Int? mem
+    Int? cpu
     String gatk_docker
     Int? preemptible_attempts
     Int? disk_space_gb
