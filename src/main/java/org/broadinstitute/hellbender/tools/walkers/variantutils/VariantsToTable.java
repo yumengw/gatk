@@ -106,7 +106,7 @@ public final class VariantsToTable extends VariantWalker {
      * -GF NAME can be any annotation name in the FORMAT field (e.g., GQ, PL).
      * This argument accepts any number of inputs.  So -GF GQ -GF PL is allowed.
      */
-    @Argument(fullName="genotypeFields", shortName="GF", doc="The name of each genotype field to capture for output in the table", optional=true)
+    @Argument(fullName="genotype-fields", shortName="GF", doc="The name of each genotype field to capture for output in the table", optional=true)
     private List<String> genotypeFieldsToTake = new ArrayList<>();
 
     /**
@@ -114,7 +114,7 @@ public final class VariantsToTable extends VariantWalker {
      * Using this flag will cause VariantsToTable to emit values regardless of the FILTER field value.
      */
     @Advanced
-    @Argument(fullName="showFiltered", shortName="raw", doc="If provided, field values from filtered records will be included in the output", optional=true)
+    @Argument(fullName="show-filtered", shortName="raw", doc="If provided, field values from filtered records will be included in the output", optional=true)
     private boolean showFiltered = false;
 
     /**
@@ -123,7 +123,7 @@ public final class VariantsToTable extends VariantWalker {
      * of values.  Using this flag will cause multi-allelic records to be split into multiple lines of output (one for each allele in the ALT field);
      * INFO field values that are not lists are copied for each of the output records while only the appropriate entry is used for lists.
      */
-    @Argument(fullName="splitMultiAllelic", shortName="SMA", doc="If provided, we will split multi-allelic records into multiple lines of output", optional=true)
+    @Argument(fullName="split-multi-allelic", shortName="SMA", doc="If provided, we will split multi-allelic records into multiple lines of output", optional=true)
     private boolean splitMultiAllelic = false;
 
     /**
@@ -140,7 +140,7 @@ public final class VariantsToTable extends VariantWalker {
      * If this flag is added to the command, the tool will instead exit with an error if missing data is encountered.
      */
     @Advanced
-    @Argument(fullName="errorIfMissingData", shortName="EMD", doc="If provided, we will require every record to contain every field", optional=true)
+    @Argument(fullName="error-if-missingData", shortName="EMD", doc="If provided, we will require every record to contain every field", optional=true)
     public boolean errorIfMissingData = false;
 
     private static final String MISSING_DATA = "NA";
