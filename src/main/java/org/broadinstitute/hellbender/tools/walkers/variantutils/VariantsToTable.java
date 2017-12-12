@@ -32,7 +32,7 @@ import java.util.function.Function;
  *
  * <p>
  *     This tool extracts specified fields for each variant in a VCF file to a tab-delimited table, which may be easier
- *     to work with. By default, the tool only extracts PASS variants in the vcf file. Filtered variants may be
+ *     to work with than a vcf. By default, the tool only extracts PASS variants in the vcf file. Filtered variants may be
  *     included in the output by adding {@value --show-filtered} flag. It can extract both INFO/site-level fields and
  *     FORMAT/sample-level fields.
  * </p>
@@ -41,7 +41,7 @@ import java.util.function.Function;
  * <p>
  *     Use the `-F` argument to extract INFO/site-level fields, which will appear as a single column each in the output
  * file.  The field can be any standard VCF column (e.g. CHROM, ID, QUAL) or any annotation name in the INFO field (e.g. AC, AF).
- * In addition, the tools recognizes the following special fiels:
+ * In addition, the tool supports the following special fields:
  * <ul>
  *     <li> EVENTLENGTH (length of the event) </li>
  *     <li> TRANSITION (for SNPs) </li>
@@ -65,8 +65,8 @@ import java.util.function.Function;
  *
  * <h3>Inputs</h3>
  * <ul>
- *     <li>A VCF file from which to extract fields</li>
- *     <li>A list of -F and/or -GF fields to extract</li>
+ *     <li> A VCF file from which to extract fields</li>
+ *     <li> Fields to extract from a vcf. Each field must be listed separately with a -F and -GF flag </li>
  * </ul>
  *
  * <h3>Output</h3>
@@ -98,9 +98,8 @@ import java.util.function.Function;
  * </ul>
  */
 @CommandLineProgramProperties(
-        summary = "This tool is designed to extract fields from the VCF to a table format " +
-                "that is more convenient to work with in downstream analyses.",
-        oneLineSummary = "Extract specific fields from a VCF file to a tab-delimited table",
+        summary = "Extract specified fields for each variant in a VCF file to a tab-delimited table, which may be easier to work with than a vcf",
+        oneLineSummary = "Extract fields from a VCF file to a tab-delimited table",
         programGroup = VariantProgramGroup.class
 )
 @DocumentedFeature
