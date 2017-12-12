@@ -28,54 +28,73 @@ import java.util.*;
 import java.util.function.Function;
 
 /**
- * Extract specific fields from a VCF file to a tab-delimited table
+ * Extract fields from a VCF file to a tab-delimited table
  *
  * <p>
- * This tool is designed to extract fields from the VCF to a table format that is more convenient to work with in
- * downstream analyses. It can extract both INFO/site-level fields and FORMAT/sample-level fields.</p>
+ *     This tool extracts specified fields for each variant in a VCF file to a tab-delimited table, which may be easier
+ *     to work with. By default, the tool only extracts PASS variants in the vcf file. Filtered variants may be
+ *     included in the output by adding {@value --show-filtered} flag. It can extract both INFO/site-level fields and
+ *     FORMAT/sample-level fields.
+ * </p>
  *
  * <h4>INFO/site-level fields</h4>
- * <p>Use the `-F` argument to extract INFO/site-level fields, which will appear as a single column each in the output
- * file.  The field can be any standard VCF column (CHROM, ID, QUAL) or any annotation name in the INFO field (AC=10).
- * In addition, there are specially supported values like EVENTLENGTH (length of the event), TRANSITION (for SNPs), HET
- * (count of het genotypes), HOM-REF (count of homozygous reference genotypes), HOM-VAR (count of homozygous variant
- * genotypes), NO-CALL (count of no-call genotypes), TYPE (the type of event), VAR (count of non-reference genotypes),
- * NSAMPLES (number of samples), NCALLED (number of called samples), GQ (from the genotype field; works only for a file
- * with a single sample), and MULTI-ALLELIC (is the record from a multi-allelic site).</p>
+ * <p>
+ *     Use the `-F` argument to extract INFO/site-level fields, which will appear as a single column each in the output
+ * file.  The field can be any standard VCF column (e.g. CHROM, ID, QUAL) or any annotation name in the INFO field (e.g. AC, AF).
+ * In addition, the tools recognizes the following special fiels:
+ * <ul>
+ *     <li> EVENTLENGTH (length of the event) </li>
+ *     <li> TRANSITION (for SNPs) </li>
+ *     <li> HET (count of het genotypes) </li>
+ *     <li> HOM-REF (count of homozygous reference genotypes) </li>
+ *     <li> HOM-VAR (count of homozygous variant genotypes) </li>
+ *     <li> NO-CALL (count of no-call genotypes) </li>
+ *     <li> TYPE (the type of event) </li>
+ *     <li> VAR (count of non-reference genotypes) </li>
+ *     <li> NSAMPLES (number of samples) </li>
+ *     <li> NCALLED (number of called samples) </li>
+ *     <li> GQ (from the genotype field. works only for a file with a single sample) </li>
+ *     <li> MULTI-ALLELIC (is the record from a multi-allelic site) </li>
+ * </ul>
  *
  * <h4>FORMAT/sample-level fields</h4>
- * <p>Use the `-GF` argument to extract FORMAT/sample-level fields, which will appear as a single column each per
- * sample in the output file.</p>
+ * <p>
+ *     Use the `-GF` argument to extract FORMAT/sample-level fields. The tool will create a new column per sample
+ *     with the name "SAMPLE_NAME.FORMAT_FIELD_NAME" e.g. NA12878.GQ, NA12877.GQ.
+ * </p>
  *
  * <h3>Inputs</h3>
  * <ul>
- *     <li>A VCF file from which to extract fields.</li>
- *     <li>A list of -F and/or -GF fields to extract.</li>
+ *     <li>A VCF file from which to extract fields</li>
+ *     <li>A list of -F and/or -GF fields to extract</li>
  * </ul>
  *
  * <h3>Output</h3>
  * <p>
- * A tab-delimited file containing the values of the requested fields in the VCF file.
+ *     A tab-delimited file containing the values of the requested fields in the VCF file.
  * </p>
  *
  * <h3>Usage example</h3>
  * <pre>
- *     ./gatk-launch VariantsToTable \
+ *     gatk VariantsToTable \
  *     -V input.vcf \
- *     -F CHROM -F POS -F ID -F QUAL -F AC \
+ *     -F CHROM -F POS -F TYPE -GF AD \
  *     -O output.table
  * </pre>
  * <p>would produce a file that looks like:</p>
  * <pre>
- *     CHROM    POS ID      QUAL    AC
- *     1        10  .       50      1
- *     1        20  rs10    99      10
+ *     CHROM  POS        TYPE   HSCX1010N.AD  HSCX1010T.AD
+ *     1      31782997   SNP    77,0          53,4
+ *     1      40125052   SNP    97,0          92,7
+ *     1      65068538   SNP    49,0          35,4
+ *     1      111146235  SNP    69,1          77,4
  * </pre>
  *
- * <h3>Caveats</h3>
+ * <h3>Notes</h3>
  * <ul>
- *     <li>Some annotations cannot be applied to all variant sites, so VCFs typically contain records where some annotation values are missing. By default this tool will emit the special value NA for the missing annotations if you request export of an annotation for which not all records have values. You can override this behavior by setting --errorIfMissingData in the command line. As a result, the tool will throw an error if a record is missing a value.</li>
- *     <li>When you request export of FORMAT/sample-level annotations (such as GT), the annotations will be identified per-sample. If multiple samples are present in the VCF, the columns will be ordered alphabetically by sample name (SM tag).</li>
+ *     <li> It is common that certain annotations are absent for some variants. By default this tool will emit NA for an annotation that's missing. If you wish that the tool fail when it encounters a missing annotation, turn on the --error-if-missing-data flag in the command line. </li>
+ *     <li> If multiple samples are present in the VCF, the genotype fields will be ordered alphabetically by sample name (SM tag). </li>
+ *     <li> Filtered sites are ignored by default. To include them, turn on the --show-filtered flag. </li>
  * </ul>
  */
 @CommandLineProgramProperties(
@@ -91,7 +110,7 @@ public final class VariantsToTable extends VariantWalker {
 
     @Argument(fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME,
             shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
-            doc="File to which results should be written (defaults to stdout)")
+            doc="File to which the tab-delimited table is written (defaults to stdout)")
     private String out = null;
 
     /**
@@ -99,14 +118,18 @@ public final class VariantsToTable extends VariantWalker {
      * To capture GENOTYPE (FORMAT) field values, see the -GF argument. This argument accepts any number
      * of inputs.  So -F CHROM -F POS is allowed.
      */
-    @Argument(fullName="fields", shortName="F", doc="The name of each field to capture for output in the table", optional=true)
+    @Argument(fullName="fields",
+            shortName="F",
+            doc="The name an INFO field to include in the output table", optional=true)
     private List<String> fieldsToTake = new ArrayList<>();
 
     /**
      * -GF NAME can be any annotation name in the FORMAT field (e.g., GQ, PL).
      * This argument accepts any number of inputs.  So -GF GQ -GF PL is allowed.
      */
-    @Argument(fullName="genotype-fields", shortName="GF", doc="The name of each genotype field to capture for output in the table", optional=true)
+    @Argument(fullName="genotype-fields",
+            shortName="GF",
+            doc="The name a genotype field to include in the output table", optional=true)
     private List<String> genotypeFieldsToTake = new ArrayList<>();
 
     /**
@@ -114,7 +137,9 @@ public final class VariantsToTable extends VariantWalker {
      * Using this flag will cause VariantsToTable to emit values regardless of the FILTER field value.
      */
     @Advanced
-    @Argument(fullName="show-filtered", shortName="raw", doc="If provided, field values from filtered records will be included in the output", optional=true)
+    @Argument(fullName="show-filtered",
+            shortName="raw",
+            doc="Field values from filtered records will be included in the output", optional=true)
     private boolean showFiltered = false;
 
     /**
@@ -123,7 +148,9 @@ public final class VariantsToTable extends VariantWalker {
      * of values.  Using this flag will cause multi-allelic records to be split into multiple lines of output (one for each allele in the ALT field);
      * INFO field values that are not lists are copied for each of the output records while only the appropriate entry is used for lists.
      */
-    @Argument(fullName="split-multi-allelic", shortName="SMA", doc="If provided, we will split multi-allelic records into multiple lines of output", optional=true)
+    @Argument(fullName="split-multi-allelic",
+            shortName="SMA",
+            doc="Split multi-allelic records into multiple lines of output", optional=true)
     private boolean splitMultiAllelic = false;
 
     /**
@@ -132,7 +159,9 @@ public final class VariantsToTable extends VariantWalker {
      * and field provided with -GF. Note that, in moltenized output, all rows will have 'site' as the value of the 'Sample' column.
      */
     @Advanced
-    @Argument(fullName="moltenize", shortName="moltenize", doc="If provided, we will produce molten output", optional=true)
+    @Argument(fullName="moltenize",
+            shortName="moltenize",
+            doc="Produce molten output", optional=true)
     private boolean moltenizeOutput = false;
 
     /**
@@ -140,7 +169,9 @@ public final class VariantsToTable extends VariantWalker {
      * If this flag is added to the command, the tool will instead exit with an error if missing data is encountered.
      */
     @Advanced
-    @Argument(fullName="error-if-missingData", shortName="EMD", doc="If provided, we will require every record to contain every field", optional=true)
+    @Argument(fullName="error-if-missing-data",
+            shortName="EMD",
+            doc="Disallow missing data", optional=true)
     public boolean errorIfMissingData = false;
 
     private static final String MISSING_DATA = "NA";
