@@ -38,7 +38,7 @@ import java.util.List;
  * <h3>Example</h3>
  *
  * <pre>
- * gatk-launch --javaOptions "-Xmx4g" GetPileupSummaries \
+ * gatk --java-options "-Xmx4g" GetPileupSummaries \
  *   -I tumor.bam \
  *   -L intervals.list \
  *   -V variants_for_contamination.vcf.gz \

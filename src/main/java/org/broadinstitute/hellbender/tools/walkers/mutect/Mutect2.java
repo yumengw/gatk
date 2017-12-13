@@ -129,7 +129,7 @@ import java.util.List;
  *     emissions enable manual review.
  * </p>
  * <pre>
- * gatk-launch --javaOptions "-Xmx4g" Mutect2 \
+ * gatk --java-options "-Xmx4g" Mutect2 \
  *   -R ref_fasta.fa \
  *   -I tumor.bam \
  *   -tumor tumor_sample_name \
@@ -143,7 +143,7 @@ import java.util.List;
  *
  * <h4>Single tumor sample</h4>
  * <pre>
- *  gatk-launch --javaOptions "-Xmx4g" Mutect2 \
+ *  gatk --java-options "-Xmx4g" Mutect2 \
  *   -R ref_fasta.fa \
  *   -I tumor.bam \
  *   -tumor tumor_sample_name \
@@ -161,7 +161,7 @@ import java.util.List;
  *    Picard MakeSitesOnlyVcf to simplify the callset for use as a PoN.
  * </p>
  * <pre>
- * gatk-launch --javaOptions "-Xmx4g" Mutect2 \
+ * gatk --java-options "-Xmx4g" Mutect2 \
  *   -R ref_fasta.fa \
  *   -I normal1.bam \
  *   -tumor normal1_sample_name \

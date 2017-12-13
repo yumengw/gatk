@@ -40,7 +40,7 @@ import java.util.stream.IntStream;
  * <h3>Example</h3>
  *
  * <pre>
- * gatk-launch --javaOptions "-Xmx4g" CalculateContamination \
+ * gatk --java-options "-Xmx4g" CalculateContamination \
  *   -I pileups.table \
  *   -O contamination.table
  * </pre>

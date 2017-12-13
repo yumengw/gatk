@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  *
  * For OxoG artifacts, specify G to T artifacts.
  * <pre>
- * gatk-launch --javaOptions "-Xmx4g" FilterByOrientationBias \
+ * gatk --java-options "-Xmx4g" FilterByOrientationBias \
  *   --artifactModes 'G/T' \
  *   -V tumor_unfiltered.vcf.gz \
  *   -P tumor.pre_adapter_detail_metrics \

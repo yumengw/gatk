@@ -60,7 +60,7 @@ import java.util.function.Function;
  *
  * <h3>Usage example</h3>
  * <pre>
- *     ./gatk-launch VariantsToTable \
+ *     gatk VariantsToTable \
  *     -V input.vcf \
  *     -F CHROM -F POS -F ID -F QUAL -F AC \
  *     -O output.table
