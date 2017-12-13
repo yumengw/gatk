@@ -5,7 +5,7 @@ ARG DRELEASE
 ADD . /gatk
 
 WORKDIR /gatk
-RUN /gatk/gradlew clean compileTestJava installAll localJar -Drelease=$DRELEASE
+RUN /gatk/gradlew clean compileTestJava installAll localJar createPythonPackageArchive -Drelease=$DRELEASE
 
 WORKDIR /root
 
@@ -42,6 +42,9 @@ RUN mkdir $DOWNLOAD_DIR && \
 ENV PATH $CONDA_PATH/envs/gatk/bin:$CONDA_PATH/bin:$PATH
 RUN conda env create -n gatk -f /gatk/scripts/gatkcondaenv.yml && \
     echo "source activate gatk" >> /gatk/gatkenv.rc
+# Now pip install the GATK Python packages
+RUN cp /gatk/build/gatkPythonPackageArchive.zip /gatk && \
+    pip install /gatk/gatkPythonPackageArchive.zip
 
 CMD ["bash", "--init-file", "/gatk/gatkenv.rc"]
 

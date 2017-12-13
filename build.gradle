@@ -1,4 +1,5 @@
 //Note: this section 'buildscript` is only for the dependencies of the buildscript itself.
+
 // See the second 'repositories' section below for the actual dependencies of GATK itself
 buildscript {
     repositories {
@@ -463,6 +464,23 @@ task bundle(type: Zip) {
 
     doLast {
         logger.lifecycle("Created GATK distribution in ${destinationDir}/${archiveName}")
+    }
+}
+
+task createPythonPackageArchive(type: Zip) {
+
+    doFirst {
+        assert file("src/main/python/org/broadinstitute/hellbender/").exists()
+    }
+
+    logger.lifecycle("Creating GATK Python package archive...")
+    destinationDir file("$buildDir")
+    archiveName "gatkPythonPackageArchive" + ".zip"
+    from("src/main/python/org/broadinstitute/hellbender/")
+    into("/")
+
+    doLast {
+        logger.lifecycle("Created GATK Python package archive in ${destinationDir}/${archiveName}")
     }
 }
 
