@@ -655,7 +655,7 @@ public class SelectVariantsIntegrationTest extends CommandLineProgramTest {
         final String testFile = getToolTestDataDir() + "filteredSamples.vcf";
 
         final IntegrationTestSpec spec = new IntegrationTestSpec(
-                baseTestString(" --min-filtered-genotypes 1 ", testFile),
+                baseTestString(" --max-filtered-genotypes 1 ", testFile),
                 Collections.singletonList(getToolTestDataDir() + "expected/" + "testSelectVariants_MaxFilteredGenotypesSelection.vcf")
         );
 
@@ -679,7 +679,7 @@ public class SelectVariantsIntegrationTest extends CommandLineProgramTest {
         final String testFile = getToolTestDataDir() + "filteredSamples.vcf";
 
         final IntegrationTestSpec spec = new IntegrationTestSpec(
-                baseTestString(" --min-fraction-filtered-genotypes 0.4 ", testFile),
+                baseTestString(" --max-fraction-filtered-genotypes 0.4 ", testFile),
                 Collections.singletonList(getToolTestDataDir() + "expected/" + "testSelectVariants_MaxFractionFilteredGenotypesSelection.vcf")
         );
 

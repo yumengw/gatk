@@ -174,7 +174,7 @@ public class VariantRecalibratorIntegrationTest extends CommandLineProgramTest {
                 " --variant " + inputFile +
                 " -L 20:1,000,000-10,000,000" +
                 " -an QD -an ReadPosRankSum -an HaplotypeScore" +
-                " -mode INDEL -mG 3" +
+                " -mode INDEL -maxGaussians 3" +
                 " --trust-all-polymorphic" + // for speed
                 " --output %s" +
                 " -tranches-file %s" +
@@ -230,7 +230,7 @@ public class VariantRecalibratorIntegrationTest extends CommandLineProgramTest {
                         " --output %s" +
                         " -tranches-file %s" +
                         " --input-model " + modelReportFilename +
-                        " -mode SNP -mG 3" +  //reduce max gaussians so we have negative training data with the sampled input
+                        " -mode SNP -maxGaussians 3" +  //reduce max gaussians so we have negative training data with the sampled input
                         " -sample-every 2" +
                         " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
                 Arrays.asList(

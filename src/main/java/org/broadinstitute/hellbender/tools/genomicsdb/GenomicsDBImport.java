@@ -135,7 +135,7 @@ public final class GenomicsDBImport extends GATKTool {
     public static final String SEGMENT_SIZE_ARG_LONG_NAME = "genomicsdb-segment-size";
     public static final String OVERWRITE_WORKSPACE_LONG_NAME = "overwrite-existing-genomicsdb-workspace";
 
-    public static final String VCF_BUFFER_SIZE_ARG_NAME = "genomicsDBVCFBufferSize";
+    public static final String VCF_BUFFER_SIZE_ARG_NAME = "genomicsdb-vcf-buffer-size";
 
     public static final String BATCHSIZE_ARG_LONG_NAME = "batch-size";
     public static final String CONSOLIDATE_ARG_NAME = "consolidate";

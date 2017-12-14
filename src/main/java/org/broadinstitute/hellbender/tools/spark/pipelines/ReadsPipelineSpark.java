@@ -68,20 +68,20 @@ public class ReadsPipelineSpark extends GATKSparkTool {
     public boolean requiresReference() { return true; }
 
 
-    @Argument(doc = "the known variants", shortName = "knownSites", fullName = "knownSites", optional = false)
+    @Argument(doc = "the known variants", shortName = "known-sites", fullName = "known-sites", optional = false)
     protected List<String> baseRecalibrationKnownVariants;
 
     @Argument(doc = "the output vcf", shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME,
             fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME, optional = false)
     protected String output;
 
-    @Argument(doc = "the output bam", shortName = "outputBam", fullName = "outputBam", optional = true)
+    @Argument(doc = "the output bam", shortName = "output-bam", fullName = "output-bam", optional = true)
     protected String outputBam;
 
-    @Argument(doc = "the join strategy for reference bases and known variants", shortName = "joinStrategy", fullName = "joinStrategy", optional = true)
+    @Argument(doc = "the join strategy for reference bases and known variants", shortName = "join-strategy", fullName = "join-strategy", optional = true)
     private JoinStrategy joinStrategy = JoinStrategy.BROADCAST;
 
-    @Argument(shortName = "DS", fullName ="duplicates_scoring_strategy", doc = "The scoring strategy for choosing the non-duplicate among candidates.")
+    @Argument(shortName = "DS", fullName ="duplicates-scoring-strategy", doc = "The scoring strategy for choosing the non-duplicate among candidates.")
     public MarkDuplicatesScoringStrategy duplicatesScoringStrategy = MarkDuplicatesScoringStrategy.SUM_OF_BASE_QUALITIES;
 
     /**

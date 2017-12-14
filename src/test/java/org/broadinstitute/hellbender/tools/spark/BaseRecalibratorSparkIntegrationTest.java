@@ -40,7 +40,7 @@ public final class BaseRecalibratorSparkIntegrationTest extends CommandLineProgr
             return  " -R " + referenceURL +
                     " -I " + bam +
                     " " + args +
-                    (knownSites.isEmpty() ? "": " -knownSites " + knownSites) +
+                    (knownSites.isEmpty() ? "": " -known-sites " + knownSites) +
                     " -O %s";
         }
 
