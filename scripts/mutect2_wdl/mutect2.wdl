@@ -247,7 +247,7 @@ task M2 {
     ${"-pon " + pon} \
     ${"-L " + intervals} \
     -O `cat vcf_name.txt` \
-    ${true='--bamOutput bamout.bam' false='' is_bamOut} \
+    ${true='--bam-output bamout.bam' false='' is_bamOut} \
     ${m2_extra_args}
   >>>
 

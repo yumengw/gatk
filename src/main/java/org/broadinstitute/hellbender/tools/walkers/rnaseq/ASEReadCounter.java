@@ -92,7 +92,7 @@ public class ASEReadCounter extends LocusWalker {
      * If this argument is enabled, loci with total depth lower than this threshold after all filters have been applied
      * will be skipped. This can be set to -1 by default to disable the evaluation and ignore this threshold.
      */
-    @Argument(fullName = "min-depth-of-non-filtered-base", shortName = "minDepth", doc = "Minimum number of bases that pass filters", optional = true)
+    @Argument(fullName = "min-depth-of-non-filtered-base", shortName = "min-depth", doc = "Minimum number of bases that pass filters", optional = true)
     public int minDepthOfNonFilteredBases = -1;
 
     /**

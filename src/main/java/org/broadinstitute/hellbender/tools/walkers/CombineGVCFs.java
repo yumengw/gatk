@@ -35,8 +35,10 @@ import java.util.*;
  *
  * <p>
  * CombineGVCFs is meant to be used for merging of GVCFs that will eventually be input into GenotypeGVCFs.
- * One could use this tool when needing to genotype multiple individual GVCFs instead of GenomicsDBImport; one would first use
- * CombineGVCFs to combine them into a single GVCF and pass this into GenotypeGVCFs.</p>
+ * One could use this tool to genotype multiple individual GVCFs instead of GenomicsDBImport; one would first use
+ * CombineGVCFs to combine them into a single GVCF and pass the results into GenotypeGVCFs. The main advantage of using CombineGVCFs
+ * over GenomicsDBImport is the ability to combine multiple intervals at once without building a GenomicsDB. CombineGVCFs
+ * is slower than GenomicsDBImport though, so it is recommended CombineGVCFs only be used when there are few samples to merge.</p>
  *
  * <h3>Input</h3>
  * <p>
@@ -76,9 +78,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
     private ReferenceConfidenceVariantContextMerger referenceConfidenceVariantContextMerger;
 
     public static final String BP_RES_LONG_NAME = "convert-to-base-pair-resolution";
-    public static final String BP_RES_SHORT_NAME = "bpResolution";
     public static final String BREAK_BANDS_LONG_NAME = "break-bands-at-multiples-of";
-    public static final String BREAK_BANDS_SHORT_NAME = "breakBandsAtMultiplesOf";
 
     /**
      * Which groups of annotations to add to the output VCF file.
@@ -94,7 +94,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
             doc="The combined GVCF output file", optional=false)
     private File outputFile;
 
-    @Argument(fullName=BP_RES_LONG_NAME, shortName=BP_RES_SHORT_NAME, doc = "If specified, convert banded gVCFs to all-sites gVCFs", optional=true)
+    @Argument(fullName=BP_RES_LONG_NAME, doc = "If specified, convert banded gVCFs to all-sites gVCFs", optional=true)
     protected boolean useBpResolution = false;
 
     /**
@@ -104,7 +104,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
      *
      * Note that the --convertToBasePairResolution argument is just a special case of this argument with a value of 1.
      */
-    @Argument(fullName=BREAK_BANDS_LONG_NAME, shortName=BREAK_BANDS_SHORT_NAME, doc = "If > 0, reference bands will be broken up at genomic positions that are multiples of this number", optional=true)
+    @Argument(fullName=BREAK_BANDS_LONG_NAME, doc = "If > 0, reference bands will be broken up at genomic positions that are multiples of this number", optional=true)
     protected int multipleAtWhichToBreakBands = 0;
 
     /**

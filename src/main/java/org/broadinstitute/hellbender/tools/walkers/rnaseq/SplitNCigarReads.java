@@ -89,7 +89,7 @@ public final class SplitNCigarReads extends TwoPassReadWalker {
      * This flag turns off the mapping quality 255 -> 60 read transformer. The transformer is on by default to ensure that
      * uniquely mapping reads assigned STAR's default 255 MQ aren't filtered out by HaplotypeCaller.
      */
-    @Argument(fullName = "skip-mapping-quality-transform", shortName = "skipMQtransform", doc = "skip the 255 -> 60 MQ read transform", optional = true)
+    @Argument(fullName = "skip-mapping-quality-transform", shortName = "skip-mq-transform", doc = "skip the 255 -> 60 MQ read transform", optional = true)
     boolean SKIP_MQ_TRANSFORM = false;
 
     /**
@@ -98,7 +98,7 @@ public final class SplitNCigarReads extends TwoPassReadWalker {
      * enough with the default value.
      */
     @Advanced
-    @Argument(fullName="max-reads-in-memory", shortName="maxInMemory", doc="max reads allowed to be kept in memory at a time by the BAM writer", optional=true)
+    @Argument(fullName="max-reads-in-memory", doc="max reads allowed to be kept in memory at a time by the BAM writer", optional=true)
     int MAX_RECORDS_IN_MEMORY = 150000;
 
     /**
@@ -106,19 +106,19 @@ public final class SplitNCigarReads extends TwoPassReadWalker {
      * It is still possible in some cases that the overhang could get clipped if the number of mismatches do not exceed this
      * value, e.g. if most of the overhang mismatches.
      */
-    @Argument(fullName="max-mismatches-in-overhang", shortName="maxMismatches", doc="max number of mismatches allowed in the overhang", optional=true)
+    @Argument(fullName="max-mismatches-in-overhang", doc="max number of mismatches allowed in the overhang", optional=true)
     int MAX_MISMATCHES_IN_OVERHANG = 1;
 
     /**
      * If there are more than this many bases in the overhang, we won't try to hard-clip them out
      */
-    @Argument(fullName="max-bases-in-overhang", shortName="maxOverhang", doc="max number of bases allowed in the overhang", optional=true)
+    @Argument(fullName="max-bases-in-overhang", doc="max number of bases allowed in the overhang", optional=true)
     int MAX_BASES_TO_CLIP = 40;
 
-    @Argument(fullName="do-not-fix-overhangs", shortName="doNotFixOverhangs", doc="do not have the walker soft-clip overhanging sections of the reads", optional=true)
+    @Argument(fullName="do-not-fix-overhangs", doc="do not have the walker soft-clip overhanging sections of the reads", optional=true)
     boolean doNotFixOverhangs = false;
 
-    @Argument(fullName="process-secondary-alignments", shortName="processSecondaryAlignments", doc="have the walker split secondary alignments (will still repair MC tag without it)", optional=true)
+    @Argument(fullName="process-secondary-alignments", doc="have the walker split secondary alignments (will still repair MC tag without it)", optional=true)
     boolean processSecondaryAlignments = false;
 
     @Override

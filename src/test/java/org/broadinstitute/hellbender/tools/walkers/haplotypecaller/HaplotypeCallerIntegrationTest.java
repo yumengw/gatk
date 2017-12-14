@@ -389,7 +389,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
                 "-L", "20:11363580-11363600",
                 "-O", output.getAbsolutePath(),
                 "-ploidy", "4",
-                "-maxGT", "15",
+                "-max-gt", "15",
                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
         };
         runCommandLine(args);

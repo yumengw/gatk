@@ -23,7 +23,6 @@ import java.util.*;
         oneLineSummary = "Gathers scattered VQSLOD tranches into a single file",
         programGroup = VariantProgramGroup.class
 )
-@DocumentedFeature(enable=false)
 @BetaFeature
 public class GatherTranches extends CommandLineProgram {
     @Argument(fullName = StandardArgumentDefinitions.INPUT_LONG_NAME,

@@ -3,7 +3,7 @@ package org.broadinstitute.hellbender.transformers;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 
 /**
- * A read transformer to modify the mapping quality of reads
+ * A read transformer to modify the mapping quality of reads with MQ=255 to reads with MQ=60
  *
  *
  */

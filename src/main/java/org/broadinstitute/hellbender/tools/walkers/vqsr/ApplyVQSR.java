@@ -83,8 +83,8 @@ import java.util.regex.Pattern;
  *   -V input.vcf.gz \
  *   -O output.vcf.gz \
  *   --ts_filter_level 99.0 \
- *   -tranchesFile output.tranches \
- *   --recalFile output.recal \
+ *   --tranches-file output.tranches \
+ *   --recal-file output.recal \
  *   -mode SNP
  * </pre>
  *
@@ -96,8 +96,8 @@ import java.util.regex.Pattern;
  *   -O output.vcf.gz \
  *   -AS \
  *   --ts_filter_level 99.0 \
- *   -tranchesFile output.AS.tranches \
- *   --recalFile output.AS.recal \
+ *   --tranches-file output.AS.tranches \
+ *   --recal-file output.AS.recal \
  *   -mode SNP 
  * </pre>
  * <p>Note that the tranches and recalibration files must have been produced by an allele-specific run of
@@ -139,10 +139,10 @@ public class ApplyVQSR extends MultiVariantWalker {
     /////////////////////////////
     // Inputs
     /////////////////////////////
-    @Argument(fullName="recal-file", shortName="recalFile", doc="The input recal file used by ApplyRecalibration", optional=false)
+    @Argument(fullName="recal-file", doc="The input recal file used by ApplyRecalibration", optional=false)
     private FeatureInput<VariantContext> recal;
 
-    @Argument(fullName="tranches-file", shortName="tranchesFile", doc="The input tranches file describing where to cut the data", optional=true)
+    @Argument(fullName="tranches-file", doc="The input tranches file describing where to cut the data", optional=true)
     private File TRANCHES_FILE;
 
     /////////////////////////////
@@ -157,7 +157,7 @@ public class ApplyVQSR extends MultiVariantWalker {
     /////////////////////////////
     // Command Line Arguments
     /////////////////////////////
-    @Argument(fullName="truth-sensitivity-filter-level", shortName="ts_filter_level", doc="The truth sensitivity level at which to start filtering", optional=true)
+    @Argument(fullName="truth-sensitivity-filter-level", shortName="ts-filter-level", doc="The truth sensitivity level at which to start filtering", optional=true)
     private Double TS_FILTER_LEVEL = null;
 
     /**
@@ -168,19 +168,19 @@ public class ApplyVQSR extends MultiVariantWalker {
     private boolean useASannotations = false;
 
     @Advanced
-    @Argument(fullName="score-cutoff", shortName="lodCutoff", doc="The VQSLOD score below which to start filtering", optional=true)
+    @Argument(fullName="score-cutoff", shortName="lod-cutoff", doc="The VQSLOD score below which to start filtering", optional=true)
     protected Double VQSLOD_CUTOFF = null;
 
     /**
      * For this to work properly, the -ignoreFilter argument should also be applied to the VariantRecalibration command.
      */
-    @Argument(fullName="ignore-filter", shortName="ignoreFilter", doc="If specified, the recalibration will be applied to variants marked as filtered by the specified filter name in the input VCF file", optional=true)
+    @Argument(fullName="ignore-filter", doc="If specified, the recalibration will be applied to variants marked as filtered by the specified filter name in the input VCF file", optional=true)
     private List<String> IGNORE_INPUT_FILTERS = new ArrayList<>();
 
-    @Argument(fullName="ignore-all-filters", shortName="ignoreAllFilters", doc="If specified, the variant recalibrator will ignore all input filters. Useful to rerun the VQSR from a filtered output file.", optional=true)
+    @Argument(fullName="ignore-all-filters", doc="If specified, the variant recalibrator will ignore all input filters. Useful to rerun the VQSR from a filtered output file.", optional=true)
     private boolean IGNORE_ALL_FILTERS = false;
 
-    @Argument(fullName="exclude-filtered", shortName="ef", doc="Don't output filtered loci after applying the recalibration", optional=true)
+    @Argument(fullName="exclude-filtered", doc="Don't output filtered loci after applying the recalibration", optional=true)
     private boolean EXCLUDE_FILTERED = false;
 
     @Argument(fullName = "mode", shortName = "mode", doc = "Recalibration mode to employ: 1.) SNP for recalibrating only SNPs (emitting indels untouched in the output VCF); 2.) INDEL for indels; and 3.) BOTH for recalibrating both SNPs and indels simultaneously.", optional=true)

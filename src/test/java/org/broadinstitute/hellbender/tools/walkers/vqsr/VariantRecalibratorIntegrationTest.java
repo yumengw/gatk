@@ -177,7 +177,7 @@ public class VariantRecalibratorIntegrationTest extends CommandLineProgramTest {
                 " -mode INDEL -mG 3" +
                 " --trust-all-polymorphic" + // for speed
                 " --output %s" +
-                " -tranchesFile %s" +
+                " -tranches-file %s" +
                 " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
                 Arrays.asList(
                         // the "expected" vcf is not in the expected dir because its used
@@ -204,10 +204,10 @@ public class VariantRecalibratorIntegrationTest extends CommandLineProgramTest {
                 " -an QD -an HaplotypeScore -an HRun" +
                 " --trust-all-polymorphic" + // for speed
                 " --output %s" +
-                " -tranchesFile %s" +
+                " -tranches-file %s" +
                 " --output-model " + modelReportFilename +
                 " -mode SNP -mG 3" +  //reduce max gaussians so we have negative training data with the sampled input
-                " -sampleEvery 2" +
+                " -sample-every 2" +
                 " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
                 Arrays.asList(
                         modelReportRecal,
@@ -228,10 +228,10 @@ public class VariantRecalibratorIntegrationTest extends CommandLineProgramTest {
                         " -an QD -an HaplotypeScore -an HRun" +
                         " --trust-all-polymorphic" + // for speed
                         " --output %s" +
-                        " -tranchesFile %s" +
+                        " -tranches-file %s" +
                         " --input-model " + modelReportFilename +
                         " -mode SNP -mG 3" +  //reduce max gaussians so we have negative training data with the sampled input
-                        " -sampleEvery 2" +
+                        " -sample-every 2" +
                         " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
                 Arrays.asList(
                         modelReportRecal,
@@ -257,19 +257,19 @@ public class VariantRecalibratorIntegrationTest extends CommandLineProgramTest {
                                 "-trust-all-polymorphic", // for speed
                                 "-mode", "SNP",
                                 "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false",
-                                "-scatterTranches",
-                                "--VQSLODtranche", "10.0",
-                                "--VQSLODtranche", "8.0",
-                                "--VQSLODtranche", "6.0",
-                                "--VQSLODtranche", "4.0",
-                                "--VQSLODtranche", "2.0",
-                                "--VQSLODtranche", "0.0",
-                                "--VQSLODtranche", "-2.0",
-                                "--VQSLODtranche", "-4.0",
-                                "--VQSLODtranche", "-6.0",
-                                "--VQSLODtranche", "-8.0",
-                                "--VQSLODtranche", "-10.0",
-                                "--VQSLODtranche", "-12.0"
+                                "--output-tranches-for-scatter",
+                                "--vqslod-tranche", "10.0",
+                                "--vqslod-tranche", "8.0",
+                                "--vqslod-tranche", "6.0",
+                                "--vqslod-tranche", "4.0",
+                                "--vqslod-tranche", "2.0",
+                                "--vqslod-tranche", "0.0",
+                                "--vqslod-tranche", "-2.0",
+                                "--vqslod-tranche", "-4.0",
+                                "--vqslod-tranche", "-6.0",
+                                "--vqslod-tranche", "-8.0",
+                                "--vqslod-tranche", "-10.0",
+                                "--vqslod-tranche", "-12.0"
                         }
                 },
         };

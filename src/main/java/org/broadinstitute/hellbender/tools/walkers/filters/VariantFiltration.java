@@ -107,7 +107,7 @@ public final class VariantFiltration extends VariantWalker {
     /**
      * This name is put in the FILTER field for variants that get filtered.  Note that there must be a 1-to-1 mapping between filter expressions and filter names.
      */
-    @Argument(fullName=FILTER_NAME_LONG_NAME, shortName="filterName", doc="Names to use for the list of filters", optional=true)
+    @Argument(fullName=FILTER_NAME_LONG_NAME, doc="Names to use for the list of filters", optional=true)
     public List<String> filterNames = new ArrayList<>();
 
     /**
@@ -117,37 +117,37 @@ public final class VariantFiltration extends VariantWalker {
      * methods so that one can now filter out hets ("isHet == 1"), refs ("isHomRef == 1"), or homs ("isHomVar == 1"). Also available are
      * expressions isCalled, isNoCall, isMixed, and isAvailable, in accordance with the methods of the Genotype object.
      */
-    @Argument(fullName=GENOTYPE_FILTER_EXPRESSION_LONG_NAME, shortName="G_filter", doc="One or more expression used with FORMAT (sample/genotype-level) fields to filter (see documentation guide for more info)", optional=true)
+    @Argument(fullName=GENOTYPE_FILTER_EXPRESSION_LONG_NAME, shortName="G-filter", doc="One or more expression used with FORMAT (sample/genotype-level) fields to filter (see documentation guide for more info)", optional=true)
     public List<String> genotypeFilterExpressions = new ArrayList<>();
 
     /**
      * Similar to the INFO field based expressions, but used on the FORMAT (genotype) fields instead.
      */
-    @Argument(fullName=GENOTYPE_FILTER_NAME_LONG_NAME, shortName="G_filterName", doc="Names to use for the list of sample/genotype filters (must be a 1-to-1 mapping); this name is put in the FILTER field for variants that get filtered", optional=true)
+    @Argument(fullName=GENOTYPE_FILTER_NAME_LONG_NAME, shortName="G-filter-name", doc="Names to use for the list of sample/genotype filters (must be a 1-to-1 mapping); this name is put in the FILTER field for variants that get filtered", optional=true)
     public List<String> genotypeFilterNames = new ArrayList<>();
 
     /**
-     * Works together with the --clusterWindowSize argument.
+     * Works together with the --cluster-window-size argument.
      */
     @Argument(fullName=CLUSTER_SIZE_LONG_NAME, shortName="cluster", doc="The number of SNPs which make up a cluster. Must be at least 2", optional=true)
     public Integer clusterSize = 3;
 
     /**
-     * Works together with the --clusterSize argument.  To disable the clustered SNP filter, set this value to less than 1.
+     * Works together with the --cluster-size argument.  To disable the clustered SNP filter, set this value to less than 1.
      */
     @Argument(fullName=CLUSTER_WINDOW_SIZE_LONG_NAME, shortName="window", doc="The window size (in bases) in which to evaluate clustered SNPs", optional=true)
     public Integer clusterWindow = 0;
 
-    @Argument(fullName=MASK_EXTENSION_LONG_NAME, shortName="maskExtend", doc="How many bases beyond records from a provided 'mask' should variants be filtered", optional=true)
+    @Argument(fullName=MASK_EXTENSION_LONG_NAME, doc="How many bases beyond records from a provided 'mask' should variants be filtered", optional=true)
     public Integer maskExtension = 0;
 
     /**
      * When using the -mask argument, the maskName will be annotated in the variant record.
-     * Note that when using the -filterNotInMask argument to reverse the masking logic,
+     * Note that when using the -filter-not-in-mask argument to reverse the masking logic,
      * it is up to the user to adapt the name of the mask to make it clear that the reverse logic was used
-     * (e.g. if masking against Hapmap, use -maskName=hapmap for the normal masking and -maskName=not_hapmap for the reverse masking).
+     * (e.g. if masking against Hapmap, use -mask-name=hapmap for the normal masking and -mask-name=not_hapmap for the reverse masking).
      */
-    @Argument(fullName=MASK_NAME_LONG_NAME, shortName="maskName", doc="The text to put in the FILTER field if a 'mask' is provided and overlaps with a variant call", optional=true)
+    @Argument(fullName=MASK_NAME_LONG_NAME, doc="The text to put in the FILTER field if a 'mask' is provided and overlaps with a variant call", optional=true)
     public String maskName = "Mask";
 
     /**
@@ -155,9 +155,9 @@ public final class VariantFiltration extends VariantWalker {
      * If this argument is used, logic is reversed, and variants falling outside a given mask will be filtered.
      * Use case is, for example, if we have an interval list or BED file with "good" sites.
      * Note that it is up to the user to adapt the name of the mask to make it clear that the reverse logic was used
-     * (e.g. if masking against Hapmap, use -maskName=hapmap for the normal masking and -maskName=not_hapmap for the reverse masking).
+     * (e.g. if masking against Hapmap, use -mask-name=hapmap for the normal masking and -mask-name=not_hapmap for the reverse masking).
      */
-    @Argument(fullName=FILTER_NOT_IN_MASK_LONG_NAME, shortName="filterNotInMask", doc="Filter records NOT in given input mask.", optional=true)
+    @Argument(fullName=FILTER_NOT_IN_MASK_LONG_NAME, doc="Filter records NOT in given input mask.", optional=true)
     public boolean filterRecordsNotInMask = false;
 
     /**
@@ -174,15 +174,15 @@ public final class VariantFiltration extends VariantWalker {
     boolean invalidatePreviousFilters = false;
 
     /**
-     * Invert the selection criteria for --filterExpression
+     * Invert the selection criteria for --filter-expression
      */
     @Argument(fullName=INVERT_LONG_NAME, shortName="invfilter", doc="Invert the selection criteria for --filterExpression", optional=true)
     public boolean invertFilterExpression = false;
 
     /**
-     * Invert the selection criteria for --genotypeFilterExpression
+     * Invert the selection criteria for --genotype-filter-expression
      */
-    @Argument(fullName=INVERT_GT_LONG_NAME, shortName="invG_filter", doc="Invert the selection criteria for --genotypeFilterExpression", optional=true)
+    @Argument(fullName=INVERT_GT_LONG_NAME, shortName="invG-filter", doc="Invert the selection criteria for --genotypeFilterExpression", optional=true)
     public boolean invertGenotypeFilterExpression = false;
 
     /**

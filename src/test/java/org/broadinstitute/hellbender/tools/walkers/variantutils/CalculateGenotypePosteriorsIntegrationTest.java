@@ -87,7 +87,7 @@ public final class CalculateGenotypePosteriorsIntegrationTest extends CommandLin
                         " -O %s" +
                         " -ped " + threeMemberNonTrioFamilyFile +
                         " -V " + getThreeMemberNonTrioTest +
-                        " -skipPop" +
+                        " --skip-population-priors" +
                         " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
                 Collections.singletonList(dir + "expectedCGP_testSingleParentFamily_chr1.vcf")
         );

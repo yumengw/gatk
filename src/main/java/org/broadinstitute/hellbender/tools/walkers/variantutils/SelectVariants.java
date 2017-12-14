@@ -89,7 +89,7 @@ import java.util.stream.Collectors;
  *     ./gatk SelectVariants \
  *     -R Homo_sapiens_assembly38.fasta \
  *     -V input.vcf \
- *     -selectType SNP \
+ *     -select-type-to-include SNP \
  *     -O output.vcf
  * </pre>
  *
@@ -150,14 +150,14 @@ public final class SelectVariants extends VariantWalker {
      * expected file format is simply plain text with one sample name per line. Note that sample exclusion takes
      * precedence over inclusion, so that if a sample is in both lists it will be excluded.
      */
-    @Argument(fullName="sample_name", shortName="sn", doc="Include genotypes from this sample", optional=true)
+    @Argument(fullName=StandardArgumentDefinitions.SAMPLE_NAME_LONG_NAME, shortName=StandardArgumentDefinitions.SAMPLE_NAME_SHORT_NAME, doc="Include genotypes from this sample", optional=true)
     private Set<String> sampleNames = new LinkedHashSet<>(0);
 
     /**
      * Using a regular expression allows you to match multiple sample names that have that pattern in common. This
      * argument can be specified multiple times in order to use multiple different matching patterns.
      */
-    @Argument(fullName="sample_expressions", shortName="se",
+    @Argument(fullName="sample-expressions", shortName="se",
                     doc="Regular expression to select multiple samples", optional=true)
     private Set<String> sampleExpressions = new LinkedHashSet<>(0);
 
@@ -167,7 +167,7 @@ public final class SelectVariants extends VariantWalker {
      * specify the name of one or more files containing sample names. File names must use the extension ".args",
      * and the expected file format is simply plain text with one sample name per line.
      */
-    @Argument(fullName="exclude_sample_name", shortName="xl_sn", doc="Exclude genotypes from this sample", optional=true)
+    @Argument(fullName="exclude-sample-name", shortName="xl_sn", doc="Exclude genotypes from this sample", optional=true)
     private Set<String> XLsampleNames = new LinkedHashSet<>(0);
 
     /**
@@ -175,7 +175,7 @@ public final class SelectVariants extends VariantWalker {
      * sample exclusion takes precedence over inclusion, so that if a sample is in both lists it will be excluded. This
      * argument can be specified multiple times in order to use multiple different matching patterns.
      */
-    @Argument(fullName="exclude_sample_expressions", shortName="xl_se",
+    @Argument(fullName="exclude-sample-expressions", shortName="xl_se",
                     doc="List of sample expressions to exclude", optional=true)
     private Set<String> XLsampleExpressions = new LinkedHashSet<>(0);
 
@@ -189,21 +189,21 @@ public final class SelectVariants extends VariantWalker {
     /**
      * Invert the selection criteria for -select.
      */
-    @Argument(shortName="invertSelect", doc="Invert the selection criteria for -select", optional=true)
+    @Argument(shortName="invert-select", doc="Invert the selection criteria for -select", optional=true)
     private boolean invertSelect = false;
 
     /*
      * If this flag is enabled, sites that are found to be non-variant after the subsetting procedure (i.e. where none
      * of the selected samples display evidence of variation) will be excluded from the output.
      */
-    @Argument(fullName="excludeNonVariants", shortName="env", doc="Don't include non-variant sites", optional=true)
+    @Argument(fullName="exclude-non-variants", doc="Don't include non-variant sites", optional=true)
     private boolean XLnonVariants = false;
 
     /**
      * If this flag is enabled, sites that have been marked as filtered (i.e. have anything other than `.` or `PASS`
      * in the FILTER field) will be excluded from the output.
      */
-    @Argument(fullName="excludeFiltered", shortName="ef", doc="Don't include filtered sites", optional=true)
+    @Argument(fullName="exclude-filtered", shortName = "ef", doc="Don't include filtered sites", optional=true)
     private boolean XLfiltered = false;
 
     /**
@@ -211,7 +211,7 @@ public final class SelectVariants extends VariantWalker {
      * operations have been completed, leaving only their minimal representation. If this flag is enabled, the original
      * alleles will be preserved as recorded in the input VCF.
      */
-    @Argument(fullName="preserveAlleles", shortName="noTrim", doc="Preserve original alleles, do not trim", optional=true)
+    @Argument(fullName="preserve-alleles", doc="Preserve original alleles, do not trim", optional=true)
     private boolean preserveAlleles = false;
 
     /**
@@ -220,7 +220,7 @@ public final class SelectVariants extends VariantWalker {
      * removed and the record will contain a '.' in the ALT column. Note also that sites-only VCFs, by definition, do
      * not include the alternate allele in any genotype calls.
      */
-    @Argument(fullName="removeUnusedAlternates", shortName="trimAlternates",
+    @Argument(fullName="remove-unused-alternates", shortName = "trim-alternates",
                     doc="Remove alternate alleles not present in any genotypes", optional=true)
     private boolean removeUnusedAlternates = false;
 
@@ -234,7 +234,7 @@ public final class SelectVariants extends VariantWalker {
      * will be included in that case, but would be excluded if `-restrictAllelesTo MULTIALLELIC` is used.
      * Valid options are ALL (default), MULTIALLELIC or BIALLELIC.
      */
-    @Argument(fullName="restrictAllelesTo", shortName="restrictAllelesTo",
+    @Argument(fullName="restrict-alleles-to",
                     doc="Select only variants of a particular allelicity", optional=true)
     private NumberAlleleRestriction alleleRestriction = NumberAlleleRestriction.ALL;
 
@@ -243,7 +243,7 @@ public final class SelectVariants extends VariantWalker {
      * subset. If this flag is enabled, the original values of those annotations will be stored in new annotations called
      * AC_Orig, AF_Orig, and AN_Orig.
      */
-    @Argument(fullName="keepOriginalAC", shortName="keepOriginalAC",
+    @Argument(fullName="keep-original-ac",
                     doc="Store the original AC, AF, and AN values after subsetting", optional=true)
     private boolean keepOriginalChrCounts = false;
 
@@ -252,7 +252,7 @@ public final class SelectVariants extends VariantWalker {
      * contents of the subset. If this flag is enabled, the original value of the DP annotation will be stored in
      * a new annotation called DP_Orig.
      */
-    @Argument(fullName="keepOriginalDP", shortName="keepOriginalDP",
+    @Argument(fullName="keep-original-dp",
                     doc="Store the original DP value after subsetting", optional=true)
     private boolean keepOriginalDepth = false;
 
@@ -261,7 +261,7 @@ public final class SelectVariants extends VariantWalker {
      * determined on the basis of family structure. Requires passing a pedigree file using the engine-level
      * `-ped` argument.
      */
-    @Argument(fullName="mendelianViolation", shortName="mv", doc="Output mendelian violation sites only", optional=true)
+    @Argument(fullName="mendelian-violation", shortName = "mv", doc="Output mendelian violation sites only", optional=true)
     private Boolean mendelianViolations = false;
 
     /**
@@ -269,7 +269,7 @@ public final class SelectVariants extends VariantWalker {
      * determined on the basis of family structure. Requires passing a pedigree file using the engine-level
      * `-ped` argument.
      */
-    @Argument(fullName="invertMendelianViolation", shortName="invMv",
+    @Argument(fullName="invert-mendelian-violation", shortName = "invMv",
                     doc="Output non-mendelian violation sites only", optional=true)
     private Boolean invertMendelianViolations = false;
 
@@ -278,7 +278,7 @@ public final class SelectVariants extends VariantWalker {
      * for a site to be accepted as a mendelian violation. Note that the `-mv` flag must be set for this argument
      * to have an effect.
      */
-    @Argument(fullName="mendelianViolationQualThreshold", shortName="mvq",
+    @Argument(fullName="mendelian-violation-qual-threshold", shortName = "mvq",
                     doc="Minimum GQ score for each trio member to accept a site as a violation", optional=true)
     private double mendelianViolationQualThreshold = 0;
 
@@ -290,7 +290,7 @@ public final class SelectVariants extends VariantWalker {
      * randomly selected from the input callset. Note that this is done using a probabilistic function, so the final
      * result is not guaranteed to carry the exact fraction requested. Can be used for large fractions.
      */
-    @Argument(fullName="select_random_fraction", shortName="fraction",
+    @Argument(fullName="select-random-fraction", shortName="fraction",
                     doc="Select a fraction of variants at random from the input", optional=true)
     private double fractionRandom = 0;
 
@@ -299,7 +299,7 @@ public final class SelectVariants extends VariantWalker {
      * randomly selected from the input callset and set to no-call (./). Note that this is done using a probabilistic
      * function, so the final result is not guaranteed to carry the exact fraction requested. Can be used for large fractions.
      */
-    @Argument(fullName="remove_fraction_genotypes", shortName="fractionGenotypes",
+    @Argument(fullName="remove-fraction-genotypes",
                         doc="Select a fraction of genotypes at random from the input and sets them to no-call", optional=true)
     private double fractionGenotypes = 0;
 
@@ -308,7 +308,7 @@ public final class SelectVariants extends VariantWalker {
      * and all variant types are considered for other selection criteria. Valid types are INDEL, SNP, MIXED, MNP,
      * SYMBOLIC, NO_VARIATION. Can be specified multiple times.
      */
-    @Argument(fullName="selectTypeToInclude", shortName="selectType",
+    @Argument(fullName="select-type-to-include",
                     doc="Select only a certain type of variants from the input file", optional=true)
     private List<VariantContext.Type> typesToInclude = new ArrayList<>();
 
@@ -317,7 +317,7 @@ public final class SelectVariants extends VariantWalker {
      * and all variant types are considered for other selection criteria. Valid types are INDEL, SNP, MIXED, MNP,
      * SYMBOLIC, NO_VARIATION. Can be specified multiple times.
      */
-    @Argument(fullName="selectTypeToExclude", shortName="xlSelectType",
+    @Argument(fullName="select-type-to-exclude",
                     doc="Do not select certain type of variants from the input file", optional=true)
     private List<VariantContext.Type> typesToExclude = new ArrayList<>();
 
@@ -326,7 +326,7 @@ public final class SelectVariants extends VariantWalker {
      * field is present in this list of IDs. The matching is done by exact string matching. If a file, the file
      * name must end in ".list", and the expected file format is simply plain text with one ID per line.
      */
-    @Argument(fullName="keepIDs", shortName="IDs", doc="List of variant rsIDs to select", optional=true)
+    @Argument(fullName="keep-ids", shortName="IDs", doc="List of variant rsIDs to select", optional=true)
     private Set<String> rsIDsToKeep = new HashSet<>();
 
     /**
@@ -334,36 +334,36 @@ public final class SelectVariants extends VariantWalker {
      * field is present in this list of IDs. The matching is done by exact string matching. If a file, the
      * file name must end in ".list", and the expected file format is simply plain text with one ID per line.
      */
-    @Argument(fullName="excludeIDs", shortName="xlIDs", doc="List of variant rsIDs to exclude", optional=true)
+    @Argument(fullName="exclude-ids", shortName="xlIDs", doc="List of variant rsIDs to exclude", optional=true)
     private Set<String> rsIDsToRemove = new HashSet<>();
 
     @Hidden
-    @Argument(fullName="fullyDecode", doc="If true, the incoming VariantContext will be fully decoded", optional=true)
+    @Argument(fullName="fully-decode", doc="If true, the incoming VariantContext will be fully decoded", optional=true)
     private boolean fullyDecode = false;
 
     /**
      * If this argument is provided, indels that are larger than the specified size will be excluded.
      */
-    @Argument(fullName="maxIndelSize", optional=true, doc="Maximum size of indels to include")
+    @Argument(fullName="max-indel-size", optional=true, doc="Maximum size of indels to include")
     private int maxIndelSize = Integer.MAX_VALUE;
 
     /**
      * If this argument is provided, indels that are smaller than the specified size will be excluded.
      */
-    @Argument(fullName="minIndelSize", optional=true, doc="Minimum size of indels to include")
+    @Argument(fullName="min-indel-size", optional=true, doc="Minimum size of indels to include")
     private int minIndelSize = 0;
 
     /**
      * If this argument is provided, select sites where at most a maximum number of samples are filtered at the genotype level.
      */
-    @Argument(fullName="maxFilteredGenotypes", optional=true, doc="Maximum number of samples filtered at the genotype level")
+    @Argument(fullName="max-filtered-genotypes", optional=true, doc="Maximum number of samples filtered at the genotype level")
     private int maxFilteredGenotypes = MAX_FILTERED_GENOTYPES_DEFAULT_VALUE;
 
     /**
      * If this argument is provided, select sites where at least a minimum number of samples are filtered at
      * the genotype level.
      */
-    @Argument(fullName="minFilteredGenotypes", optional=true,
+    @Argument(fullName="min-filtered-genotypes", optional=true,
                     doc="Minimum number of samples filtered at the genotype level")
     private int minFilteredGenotypes = MIN_FILTERED_GENOTYPES_DEFAULT_VALUE;
 
@@ -371,7 +371,7 @@ public final class SelectVariants extends VariantWalker {
      * If this argument is provided, select sites where a fraction or less of the samples are filtered at
      * the genotype level.
      */
-    @Argument(fullName="maxFractionFilteredGenotypes",
+    @Argument(fullName="max-fraction-filtered-genotypes",
                     optional=true, doc="Maximum fraction of samples filtered at the genotype level")
     private double maxFractionFilteredGenotypes = MAX_FRACTION_FILTERED_GENOTYPES_DEFAULT_VALUE;
 
@@ -379,37 +379,37 @@ public final class SelectVariants extends VariantWalker {
      * If this argument is provided, select sites where a fraction or more of the samples are filtered at
      * the genotype level.
      */
-    @Argument(fullName="minFractionFilteredGenotypes", optional=true,
+    @Argument(fullName="min-fraction-filtered-genotypes", optional=true,
                     doc="Maximum fraction of samples filtered at the genotype level")
     private double minFractionFilteredGenotypes = MIN_FRACTION_FILTERED_GENOTYPES_DEFAULT_VALUE;
 
     /**
      * If this argument is provided, select sites where at most the given number of samples have no-call genotypes.
      */
-    @Argument(fullName="maxNOCALLnumber", optional=true,
+    @Argument(fullName="max-nocall-number", optional=true,
             doc="Maximum number of samples with no-call genotypes")
     private int maxNOCALLnumber = MAX_NOCALL_NUMBER_DEFAULT_VALUE;
 
     /**
      * If this argument is provided, select sites where at most the given fraction of samples have no-call genotypes.
      */
-    @Argument(fullName="maxNOCALLfraction", optional=true,
+    @Argument(fullName="max-nocall-fraction", optional=true,
             doc="Maximum fraction of samples with no-call genotypes")
     private double maxNOCALLfraction = MAX_NOCALL_FRACTION_DEFAULT_VALUE;
 
     /**
      * If this argument is provided, set filtered genotypes to no-call (./.).
      */
-    @Argument(fullName="setFilteredGtToNocall", optional=true, doc="Set filtered genotypes to no-call")
+    @Argument(fullName="set-filtered-gt-to-nocall", optional=true, doc="Set filtered genotypes to no-call")
     private boolean setFilteredGenotypesToNocall = false;
 
     @Hidden
-    @Argument(fullName="ALLOW_NONOVERLAPPING_COMMAND_LINE_SAMPLES", optional=true,
+    @Argument(fullName="allow-nonoverlapping-command-line-samples", optional=true,
                     doc="Allow samples other than those in the VCF to be specified on the command line. These samples will be ignored.")
     private boolean allowNonOverlappingCommandLineSamples = false;
 
     @Hidden
-    @Argument(fullName="SUPPRESS_REFERENCE_PATH", shortName="sr", optional=true,
+    @Argument(fullName="suppress-reference-path", shortName = "sr", optional=true,
             doc="Suppress reference path in output for test result differencing")
     private boolean suppressReferencePath = false;
 
@@ -695,7 +695,7 @@ public final class SelectVariants extends VariantWalker {
                         "Samples entered on command line (through -sf or -sn) that are not present in the VCF.",
                         "A list of these samples:",
                         Utils.join(",", samplesNotInHeader),
-                        "To ignore these samples, run with --ALLOW_NONOVERLAPPING_COMMAND_LINE_SAMPLES"));
+                        "To ignore these samples, run with --allow-nonoverlapping-command-line-samples"));
             }
         }
 

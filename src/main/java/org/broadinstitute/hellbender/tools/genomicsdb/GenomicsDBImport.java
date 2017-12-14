@@ -81,8 +81,8 @@ import java.util.function.Function;
  *      -V data/gvcfs/mother.g.vcf.gz \
  *      -V data/gvcfs/father.g.vcf.gz \
  *      -V data/gvcfs/son.g.vcf.gz \
- *      -genomicsDBWorkspace my_database \
- *      --intervals 20
+ *      --genomicsdb-workspace-path my_database \
+ *      -L 20
  *  </pre>
  *
  *  Provide sample GVCFs in a map file.
@@ -90,14 +90,15 @@ import java.util.function.Function;
  *  <pre>
  *    gatk --javaOptions "-Xmx4g -Xms4g" \
  *       GenomicsDBImport \
- *       -genomicsDBWorkspace my_database \
- *       -batchSize 50 \
+ *       --genomicsdb-workspace-path my_database \
+ *       --batch-size 50 \
  *       -L chr1:1000-10000 \
- *       -sampleNameMap cohort.sample_map \
+ *       --sample-name-map cohort.sample_map \
  *       --reader-threads 5
  *  </pre>
  *
- *  The sample map is a tab-delimited text file with sample_name--tab--path_to_sample_vcf per line.
+ *  The sample map is a tab-delimited text file with sample_name--tab--path_to_sample_vcf per line. Using a sample map
+ *  saves the tool from having to download the GVCF headers in order to determine the sample names.
  *
  *  <pre>
  *  sample1      sample1.vcf.gz
@@ -111,6 +112,8 @@ import java.util.function.Function;
  *     <li>Currently, only supports diploid data</li>
  *     <li>Input GVCFs cannot contain multiple entries for a single genomic position</li>
  *     <li>Currently, a GenomicsDB must be used from the directory structure in which it was created. If copied between file systems, the absolute path must be the same at the destination.</li>
+ *     <li>The --genomicsdb-workspace-path must point to a non-existent or empty directory.</li>
+ *     <li>The -Xmx value the tool is run with should be less than the total amount of physical memory available by at least a few GB, as the native TileDB library requires additional memory on top of the Java memory (this one is really important, as failure to leave enough memory for the native code can result in confusing error messages!)</li>
  * </ul>
  *
  * <h3>Developer Note</h3>
@@ -128,32 +131,24 @@ public final class GenomicsDBImport extends GATKTool {
     private static final long DEFAULT_SEGMENT_SIZE = 1048576L;
     private static final int DEFAULT_ZERO_BATCH_SIZE = 0;
 
-    public static final String WORKSPACE_ARG_SHORT_NAME = "genomicsDBWorkspace";
     public static final String WORKSPACE_ARG_LONG_NAME = "genomicsdb-workspace-path";
     public static final String SEGMENT_SIZE_ARG_LONG_NAME = "genomicsdb-segment-size";
-    public static final String SEGMENT_SIZE_ARG_SHORT_NAME = "genomicsDBSegmentSize";
     public static final String OVERWRITE_WORKSPACE_LONG_NAME = "overwrite-existing-genomicsdb-workspace";
-    public static final String OVERWRITE_WORKSPACE_SHORT_NAME = "overwriteExistingGenomicsDBWorkspace";
 
     public static final String VCF_BUFFER_SIZE_ARG_NAME = "genomicsDBVCFBufferSize";
 
-    public static final String BATCHSIZE_ARG_SHORT_NAME = "batchSize";
     public static final String BATCHSIZE_ARG_LONG_NAME = "batch-size";
     public static final String CONSOLIDATE_ARG_NAME = "consolidate";
     public static final String SAMPLE_NAME_MAP_LONG_NAME = "sample-name-map";
-    public static final String SAMPLE_NAME_MAP_SHORT_NAME = "sampleNameMap";
     public static final String VALIDATE_SAMPLE_MAP_LONG_NAME = "validate-sample-name-map";
-    public static final String VALIDATE_SAMPLE_MAP_SHORT_NAME = "validateSampleNameMap";
     public static final String VCF_INITIALIZER_THREADS_LONG_NAME = "reader-threads";
-    public static final String VCF_INITIALIZER_THREADS_SHORT_NAME = "readerThreads";
 
     @Argument(fullName = WORKSPACE_ARG_LONG_NAME,
-              shortName = WORKSPACE_ARG_SHORT_NAME,
-              doc = "Workspace for GenomicsDB. Must be a POSIX file system path, but can be a relative path.")
+              doc = "Workspace for GenomicsDB. Must be a POSIX file system path, but can be a relative path." +
+                      " Must be an empty or non-existent directory.")
     private String workspace;
 
     @Argument(fullName = SEGMENT_SIZE_ARG_LONG_NAME,
-              shortName = SEGMENT_SIZE_ARG_SHORT_NAME,
               doc = "Buffer size in bytes allocated for GenomicsDB attributes during " +
                     "import. Should be large enough to hold data from one site. " +
                     " Defaults to " + DEFAULT_SEGMENT_SIZE,
@@ -181,7 +176,6 @@ public final class GenomicsDBImport extends GATKTool {
     private long vcfBufferSizePerSample = DEFAULT_VCF_BUFFER_SIZE_PER_SAMPLE;
 
     @Argument(fullName = OVERWRITE_WORKSPACE_LONG_NAME,
-              shortName = OVERWRITE_WORKSPACE_SHORT_NAME,
               doc = "Will overwrite given workspace if it exists. " +
                     "Otherwise a new workspace is created. " +
                     "Defaults to false",
@@ -189,7 +183,6 @@ public final class GenomicsDBImport extends GATKTool {
     private Boolean overwriteExistingWorkspace = false;
 
     @Argument(fullName = BATCHSIZE_ARG_LONG_NAME,
-              shortName = BATCHSIZE_ARG_SHORT_NAME,
               doc = "Batch size controls the number of samples for which readers are open at once " +
                     "and therefore provides a way to minimize memory consumption. However, it can take longer to complete. " +
                     "Use the consolidate flag if more than a hundred batches were used. This will improve feature read time. " +
@@ -212,7 +205,6 @@ public final class GenomicsDBImport extends GATKTool {
 
     @Advanced
     @Argument(fullName = SAMPLE_NAME_MAP_LONG_NAME,
-            shortName = SAMPLE_NAME_MAP_SHORT_NAME,
             doc = "Path to file containing a mapping of sample name to file uri in tab delimited format.  If this is " +
                     "specified then the header from the first sample will be treated as the merged header rather than " +
                     "merging the headers, and the sample names will be taken from this file.  This may be used to rename " +

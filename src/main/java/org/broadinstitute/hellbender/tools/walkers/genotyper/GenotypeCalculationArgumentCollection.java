@@ -39,7 +39,7 @@ public final class GenotypeCalculationArgumentCollection implements Serializable
     /**
      * Use the new allele frequency / QUAL score model
      */
-    @Argument(fullName = "use-new-qual-calculator", shortName = "newQual", doc = "If provided, we will use the new AF model instead of the so-called exact model", optional = true)
+    @Argument(fullName = "use-new-qual-calculator", shortName = "new-qual", doc = "If provided, we will use the new AF model instead of the so-called exact model", optional = true)
     public boolean USE_NEW_AF_CALCULATOR = false;
 
     /**
@@ -83,14 +83,14 @@ public final class GenotypeCalculationArgumentCollection implements Serializable
     /**
      * This argument informs the prior probability of having an indel at a site.
      */
-    @Argument(fullName = "indel-heterozygosity", shortName = "indelHeterozygosity", doc = "Heterozygosity for indel calling.  See the GATKDocs for heterozygosity for full details on the meaning of this population genetics concept", optional = true)
+    @Argument(fullName = "indel-heterozygosity", doc = "Heterozygosity for indel calling.  See the GATKDocs for heterozygosity for full details on the meaning of this population genetics concept", optional = true)
     public double indelHeterozygosity = HomoSapiensConstants.INDEL_HETEROZYGOSITY;
 
     /**
      * The standard deviation of the distribution of alt allele fractions.  The above heterozygosity parameters give the
      * *mean* of this distribution; this parameter gives its spread.
      */
-    @Argument(fullName = "heterozygosity-stdev", shortName = "heterozygosityStandardDeviation", doc = "Standard deviation of eterozygosity for SNP and indel calling.", optional = true)
+    @Argument(fullName = "heterozygosity-stdev", doc = "Standard deviation of eterozygosity for SNP and indel calling.", optional = true)
     public double heterozygosityStandardDeviation = 0.01;
 
     /**
@@ -102,7 +102,7 @@ public final class GenotypeCalculationArgumentCollection implements Serializable
      * (using either -ERC GVCF or -ERC BP_RESOLUTION) the call threshold is automatically set to zero. Call confidence thresholding
      * will then be performed in the subsequent GenotypeGVCFs command.
      */
-    @Argument(fullName = "standard-min-confidence-threshold-for-calling", shortName = "stand_call_conf", doc = "The minimum phred-scaled confidence threshold at which variants should be called", optional = true)
+    @Argument(fullName = "standard-min-confidence-threshold-for-calling", shortName = "stand-call-conf", doc = "The minimum phred-scaled confidence threshold at which variants should be called", optional = true)
     public double STANDARD_CONFIDENCE_FOR_CALLING = 10.0;
 
     /**
@@ -114,7 +114,7 @@ public final class GenotypeCalculationArgumentCollection implements Serializable
      * See also {@link #MAX_GENOTYPE_COUNT}.
      */
     @Advanced
-    @Argument(fullName = "max-alternate-alleles", shortName = "maxAltAlleles", doc = "Maximum number of alternate alleles to genotype", optional = true)
+    @Argument(fullName = "max-alternate-alleles", doc = "Maximum number of alternate alleles to genotype", optional = true)
     public int MAX_ALTERNATE_ALLELES = 6;
 
     /**
@@ -134,7 +134,7 @@ public final class GenotypeCalculationArgumentCollection implements Serializable
      * See also {@link #MAX_ALTERNATE_ALLELES}.
      */
     @Advanced
-    @Argument(fullName = "max-genotype-count", shortName = "maxGT", doc = "Maximum number of genotypes to consider at any site", optional = true)
+    @Argument(fullName = "max-genotype-count", shortName = "max-gt", doc = "Maximum number of genotypes to consider at any site", optional = true)
     public int MAX_GENOTYPE_COUNT = 1024;
 
     /**
@@ -157,12 +157,12 @@ public final class GenotypeCalculationArgumentCollection implements Serializable
      * for the single-sample diploid case.
      */
     @Advanced
-    @Argument(fullName = "input-prior", shortName = "inputPrior", doc = "Input prior for calls", optional = true)
+    @Argument(fullName = "input-prior",  doc = "Input prior for calls", optional = true)
     public List<Double> inputPrior = Collections.emptyList();
 
     /**
      *   Sample ploidy - equivalent to number of chromosomes per pool. In pooled experiments this should be = # of samples in pool * individual sample ploidy
      */
-    @Argument(shortName="ploidy", fullName="sample_ploidy", doc="Ploidy (number of chromosomes) per sample. For pooled data, set to (Number of samples in each pool * Sample Ploidy).", optional=true)
+    @Argument(shortName="ploidy", fullName="sample-ploidy", doc="Ploidy (number of chromosomes) per sample. For pooled data, set to (Number of samples in each pool * Sample Ploidy).", optional=true)
     public int samplePloidy = HomoSapiensConstants.DEFAULT_PLOIDY;
 }

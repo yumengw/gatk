@@ -84,30 +84,30 @@ public final class HaplotypeCallerSpark extends GATKSparkTool {
     public static class ShardingArgumentCollection implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        @Argument(fullName=AssemblyRegionWalker.SHARD_SIZE_LONG_NAME, shortName=AssemblyRegionWalker.SHARD_SIZE_SHORT_NAME, doc = "Maximum size of each read shard, in bases. For good performance, this should be much larger than the maximum assembly region size.", optional = true)
+        @Argument(fullName=AssemblyRegionWalker.SHARD_SIZE_LONG_NAME, doc = "Maximum size of each read shard, in bases. For good performance, this should be much larger than the maximum assembly region size.", optional = true)
         public int readShardSize = DEFAULT_READSHARD_SIZE;
 
-        @Argument(fullName=AssemblyRegionWalker.SHARD_PADDING_LONG_NAME, shortName=AssemblyRegionWalker.SHARD_PADDING_SHORT_NAME, doc = "Each read shard has this many bases of extra context on each side. Read shards must have as much or more padding than assembly regions.", optional = true)
+        @Argument(fullName=AssemblyRegionWalker.SHARD_PADDING_LONG_NAME, doc = "Each read shard has this many bases of extra context on each side. Read shards must have as much or more padding than assembly regions.", optional = true)
         public int readShardPadding = HaplotypeCaller.DEFAULT_READSHARD_PADDING;
 
-        @Argument(fullName = AssemblyRegionWalker.MIN_ASSEMBLY_LONG_NAME, shortName = AssemblyRegionWalker.MIN_ASSEMBLY_SHORT_NAME, doc = "Minimum size of an assembly region", optional = true)
+        @Argument(fullName = AssemblyRegionWalker.MIN_ASSEMBLY_LONG_NAME, doc = "Minimum size of an assembly region", optional = true)
         public int minAssemblyRegionSize = HaplotypeCaller.DEFAULT_MIN_ASSEMBLY_REGION_SIZE;
 
-        @Argument(fullName = AssemblyRegionWalker.MAX_ASSEMBLY_LONG_NAME, shortName = AssemblyRegionWalker.MAX_ASSEMBLY_SHORT_NAME, doc = "Maximum size of an assembly region", optional = true)
+        @Argument(fullName = AssemblyRegionWalker.MAX_ASSEMBLY_LONG_NAME, doc = "Maximum size of an assembly region", optional = true)
         public int maxAssemblyRegionSize = HaplotypeCaller.DEFAULT_MAX_ASSEMBLY_REGION_SIZE;
 
-        @Argument(fullName = AssemblyRegionWalker.ASSEMBLY_PADDING_LONG_NAME, shortName = AssemblyRegionWalker.ASSEMBLY_PADDING_SHORT_NAME, doc = "Number of additional bases of context to include around each assembly region", optional = true)
+        @Argument(fullName = AssemblyRegionWalker.ASSEMBLY_PADDING_LONG_NAME, doc = "Number of additional bases of context to include around each assembly region", optional = true)
         public int  assemblyRegionPadding = HaplotypeCaller.DEFAULT_ASSEMBLY_REGION_PADDING;
 
-        @Argument(fullName = AssemblyRegionWalker.MAX_STARTS_LONG_NAME, shortName = AssemblyRegionWalker.MAX_STARTS_SHORT_NAME, doc = "Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable.", optional = true)
+        @Argument(fullName = AssemblyRegionWalker.MAX_STARTS_LONG_NAME, doc = "Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable.", optional = true)
         public int  maxReadsPerAlignmentStart = HaplotypeCaller.DEFAULT_MAX_READS_PER_ALIGNMENT;
 
         @Advanced
-        @Argument(fullName = AssemblyRegionWalker.THRESHOLD_LONG_NAME, shortName = AssemblyRegionWalker.THRESHOLD_SHORT_NAME, doc="Minimum probability for a locus to be considered active.", optional = true)
+        @Argument(fullName = AssemblyRegionWalker.THRESHOLD_LONG_NAME, doc="Minimum probability for a locus to be considered active.", optional = true)
         public double activeProbThreshold = HaplotypeCaller.DEFAULT_ACTIVE_PROB_THRESHOLD;
 
         @Advanced
-        @Argument(fullName = AssemblyRegionWalker.PROPAGATION_LONG_NAME, shortName = AssemblyRegionWalker.PROPAGATION_SHORT_NAME, doc="Upper limit on how many bases away probability mass can be moved around when calculating the boundaries between active and inactive assembly regions", optional = true)
+        @Argument(fullName = AssemblyRegionWalker.PROPAGATION_LONG_NAME, doc="Upper limit on how many bases away probability mass can be moved around when calculating the boundaries between active and inactive assembly regions", optional = true)
         public int maxProbPropagationDistance = HaplotypeCaller.DEFAULT_MAX_PROB_PROPAGATION_DISTANCE;
 
     }

@@ -56,10 +56,10 @@ import java.util.stream.IntStream;
 public class SplitIntervals extends GATKTool {
 
     public static final String SCATTER_COUNT_SHORT_NAME = "scatter";
-    public static final String SCATTER_COUNT_LONG_NAME = "scatter_count";
+    public static final String SCATTER_COUNT_LONG_NAME = "scatter-count";
 
     public static final String SUBDIVISION_MODE_SHORT_NAME = "mode";
-    public static final String SUBDIVISION_MODE_lONG_NAME = "subdivision_mode";
+    public static final String SUBDIVISION_MODE_lONG_NAME = "subdivision-mode";
 
 
     @Argument(fullName = SCATTER_COUNT_LONG_NAME, shortName = SCATTER_COUNT_SHORT_NAME,
