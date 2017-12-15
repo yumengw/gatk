@@ -1,4 +1,4 @@
-package org.broadinstitute.hellbender.tools.copynumber.formats;
+package org.broadinstitute.hellbender.tools.copynumber.arguments;
 
 public final class CopyNumberStandardArgument {
     public static final String ANNOTATED_INTERVALS_FILE_LONG_NAME = "annotated-intervals";

@@ -1,4 +1,4 @@
-package org.broadinstitute.hellbender.tools.copynumber.formats;
+package org.broadinstitute.hellbender.tools.copynumber.arguments;
 
 import com.google.common.collect.Ordering;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -48,8 +48,7 @@ public final class CopyNumberArgumentValidationUtils {
                                                                final SAMSequenceDictionary sequenceDictionary) {
         Utils.nonNull(intervals);
         Utils.nonNull(sequenceDictionary);
-        final GenomeLocParser genomeLocParser = new GenomeLocParser(sequenceDictionary);
-        Utils.validateArg(intervals.stream().allMatch(i -> genomeLocParser.isValidGenomeLoc(i.getContig(), i.getStart(), i.getEnd())),
+        Utils.validateArg(intervals.stream().allMatch(i -> IntervalUtils.intervalIsOnDictionaryContig(new SimpleInterval(i), sequenceDictionary)),
                 "Records contained at least one interval that did not validate against the sequence dictionary.");
         if (!Ordering.from(IntervalUtils.getDictionaryOrderComparator(sequenceDictionary)).isStrictlyOrdered(intervals)) {
             throw new IllegalArgumentException("Records were not strictly sorted in dictionary order.");

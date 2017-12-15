@@ -1,6 +1,5 @@
 package org.broadinstitute.hellbender.tools.copynumber.denoising;
 
-import htsjdk.samtools.SAMSequenceDictionary;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.DefaultRealMatrixChangingVisitor;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -8,13 +7,9 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberArgumentValidationUtils;
-import org.broadinstitute.hellbender.tools.copynumber.formats.collections.AnnotatedIntervalCollection;
-import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.param.ParamUtils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

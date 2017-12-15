@@ -368,7 +368,7 @@ task GermlineCNVCallerCohortMode {
             --input ${sep=" --input " read_count_files} \
             --contig-ploidy-calls contig-ploidy-calls-dir \
             ${"--annotated-intervals " + annotated_intervals} \
-            --interval_merging_rule OVERLAPPING_ONLY \
+            --interval-merging-rule OVERLAPPING_ONLY \
             --output ${output_dir_} \
             --output-prefix ${cohort_entity_id} \
             --verbosity DEBUG \
