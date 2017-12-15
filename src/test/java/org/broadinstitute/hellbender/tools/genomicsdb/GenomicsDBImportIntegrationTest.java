@@ -169,7 +169,7 @@ public final class GenomicsDBImportIntegrationTest extends CommandLineProgramTes
     private void writeToGenomicsDB(final List<String> vcfInputs, final SimpleInterval interval, final String workspace,
                                    final int batchSize, final Boolean useBufferSize, final int bufferSizePerSample, int threads) {
         final ArgumentsBuilder args = new ArgumentsBuilder();
-        args.addArgument("genomicsdb-workspace", workspace);
+        args.addArgument(GenomicsDBImport.WORKSPACE_ARG_LONG_NAME, workspace);
         args.addArgument("L", IntervalUtils.locatableToString(interval));
         vcfInputs.forEach(vcf -> args.addArgument("V", vcf));
         args.addArgument("batch-size", String.valueOf(batchSize));
