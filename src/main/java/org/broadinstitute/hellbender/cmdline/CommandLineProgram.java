@@ -85,7 +85,6 @@ public abstract class CommandLineProgram implements CommandLinePluginProvider {
                 common = true,
                 optional = true)
     public String GATK_CONFIG_FILE = null;
-    @Argument(fullName = "gcs-max-retries", shortName = "gcs-retries", doc = "If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection", optional = true)
 
     private CommandLineParser commandLineParser;
 
