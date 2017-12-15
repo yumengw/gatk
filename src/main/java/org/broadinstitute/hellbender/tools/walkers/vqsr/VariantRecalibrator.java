@@ -272,7 +272,7 @@ public class VariantRecalibrator extends MultiVariantWalker {
 
     /**
      *  The filename for a VQSR model fit to use to recalibrate the input variants. This model should be generated using
-     *  a previous VariantRecalibration run with the --output_model argument.
+     *  a previous VariantRecalibration run with the --output-model argument.
      */
     @Argument(fullName="input-model",
             doc="If specified, the variant recalibrator will read the VQSR model from this file path.",
@@ -282,11 +282,11 @@ public class VariantRecalibrator extends MultiVariantWalker {
     /**
      * This argument is intended to be used in a more complicated VQSR scheme meant for very large WGS callsets that
      * require a prohibitive amount of memory for classic VQSR. Given that training data is downsampled once it exceeds
-     * --maxNumTrainingData, reading in additional data to build the model only serves to consume resources. However,
+     * --max-num-training-data, reading in additional data to build the model only serves to consume resources. However,
      * with this argument the output recal file will also be downsampled. The recommended VQSR procedure when using this
-     * argument is to run VariantRecalibrator once with sampling and designate an --output_model file. Then
+     * argument is to run VariantRecalibrator once with sampling and designate an --output-model file. Then
      * VariantRecalibrator can be run a second time scattered using the -scatterTranches argument and that file as an
-     * --input_model.  The scattered recal files can be gathered with the GatherVcfs tool and the scattered tranches can
+     * --input-model.  The scattered recal files can be gathered with the GatherVcfs tool and the scattered tranches can
      * be gathered with the GatherTranches tool.
      *
      */
