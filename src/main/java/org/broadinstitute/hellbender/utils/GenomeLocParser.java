@@ -12,6 +12,9 @@ import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Factory class for creating GenomeLocs
  */
@@ -303,7 +306,20 @@ public final class GenomeLocParser {
                 return GenomeLoc.UNMAPPED;
             }
 
-            final Locatable locatable = new SimpleInterval(str);
+            List<SimpleInterval> ambiguousIntervals = SimpleInterval.getAmbiguousIntervals(str, contigInfo.getDictionary());
+            if (ambiguousIntervals.isEmpty()) {
+                throw new UserException.MalformedGenomeLoc(
+                        String.format("Malformed query can't be resolved: %s", str));
+            } else if (ambiguousIntervals.size() > 1) {
+                throw new UserException.MalformedGenomeLoc(
+                        String.format(
+                                "Ambiguous query has multiple interpretations: %s",
+                                ambiguousIntervals.stream().map(f -> f.toString()).collect(Collectors.joining(" and "))
+                        ));
+            }
+
+            //final Locatable locatable = new SimpleInterval(str);
+            final Locatable locatable = ambiguousIntervals.get(0);
             final String contig = locatable.getContig();
             final int start = locatable.getStart();
             int stop = locatable.getEnd();

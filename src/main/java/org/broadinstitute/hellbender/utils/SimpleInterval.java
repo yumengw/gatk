@@ -8,6 +8,8 @@ import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
  /**
  * Minimal immutable class representing a 1-based closed ended genomic interval
@@ -135,12 +137,99 @@ public final class SimpleInterval implements Locatable, Serializable {
         this.end = end;
     }
 
-    /**
+     // Dictionary:
+     //     contig
+     //     contig :start
+     //     contig :start +
+     //     contig :start -end
+     //
+     // There is a valid prefix, followed by a ":". Try to resolve as one of:
+     //     prefix:nnn+
+     //     prefix:nnn
+     //     prefix:nnn-nnn
+     //
+     public static List<SimpleInterval> getAmbiguousIntervals(final String str, final SAMSequenceDictionary dict) {
+         Utils.nonNull(str);
+         Utils.validateArg(!str.isEmpty(), "str should not be empty");
+
+         final List<SimpleInterval> ambiguousIntervals = new ArrayList<>();
+
+         // If the entire interval query is a valid contig name, add that as an interval
+         final SAMSequenceRecord queryAsContigName = dict.getSequence(str);
+         if (queryAsContigName != null) {
+             ambiguousIntervals.add(new SimpleInterval(str, 1, queryAsContigName.getSequenceLength()));
+         }
+
+         // If there are one or more embedded colons, peel off the prefix up to the last one we find. If that
+         // prefix is also a valid contig name, then try to interpret the rest of the string as a query against
+         // that contig, otherwise return since there is no other legitimate interpretation, so there can be no
+         // other ambiguity.
+         final int lastColonIndex = str.lastIndexOf(CONTIG_SEPARATOR);
+         if (lastColonIndex == -1) {
+             return ambiguousIntervals;
+         }
+         final String prefix = str.substring(0, lastColonIndex);
+         final SAMSequenceRecord prefixSequence = dict.getSequence(prefix);
+         if (prefixSequence == null) {
+             return ambiguousIntervals;
+         }
+
+         try {
+             final int lastDashIndex = str.lastIndexOf(START_END_SEPARATOR);
+             int startPos;
+             int endPos;
+
+             // try to resolve as "prefix:nnn+"
+             if (str.endsWith(END_OF_CONTIG)) {
+                 //TODO: need a test with a query "prefix:+", where "prefix:" is a valid contig
+                 // try to resolve as "prefix:nnn+"
+                 startPos = parsePositionThrowOnFailure(str.substring(lastColonIndex + 1, str.length()-1));
+                 endPos = prefixSequence.getSequenceLength();
+             } else if (lastDashIndex > lastColonIndex) {
+                 // try to resolve as "prefix:start-end"
+                 startPos = parsePositionThrowOnFailure(str.substring(lastColonIndex + 1, lastDashIndex));
+                 endPos = parsePositionThrowOnFailure(str.substring(lastDashIndex + 1, str.length()));
+             } else {
+                 // try to resolve as "prefix:nnn"
+                 startPos = parsePositionThrowOnFailure(str.substring(lastColonIndex + 1, str.length()));
+                 endPos = startPos;
+             }
+
+             // parsing succeeded, check if the resulting values are not valid, but only throw only if there is
+             // no other valid interpretation of thee query string
+             // TODO: this is sketchy; is this a valid reason to not throw ? This could be a mistake
+             // TODO: in the way the user typed the position,
+             if (isValid(prefix, startPos, endPos)) {
+                 ambiguousIntervals.add(new SimpleInterval(prefix, startPos, endPos));
+             } else {
+                 if (ambiguousIntervals.size() == 0) {
+                     validatePositions(prefix, startPos, endPos);
+                 }
+             }
+         } catch (NumberFormatException e) {
+             // If parsing the start or end pos fails, only throw if there is no alternative interpretation
+             // TODO: this is sketchy; is this a valid reason to not throw ? This could be a mistake
+             // TODO: in the way the user typed the position
+             if (ambiguousIntervals.size() == 0) {
+                 throw e;
+             }
+         }
+         return ambiguousIntervals;
+     }
+
+     /**
+      * Parses a number like 100000 or 1,000,000 into an int. Throws NumberFormatException on parse failure.
+      */
+     private static int parsePositionThrowOnFailure(final String pos) throws NumberFormatException {
+         return Integer.parseInt(pos.replaceAll(",", "")); //strip commas
+     }
+
+     /**
      * Parses a number like 100000 or 1,000,000 into an int.
      */
     private static int parsePosition(final String pos) {
         try {
-            return Integer.parseInt(pos.replaceAll(",", "")); //strip commas
+            return parsePositionThrowOnFailure(pos);
         } catch (NumberFormatException e){
             throw new UserException("Problem parsing start/end value in interval string. Value was: " + pos, e);
         }

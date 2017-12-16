@@ -13,11 +13,14 @@ import htsjdk.samtools.util.IntervalList;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.tribble.SimpleFeature;
 import htsjdk.variant.utils.SAMSequenceDictionaryExtractor;
+import htsjdk.variant.vcf.VCFFileReader;
 import org.apache.commons.io.FileUtils;
+import org.bdgenomics.adam.models.SequenceDictionary;
 import org.broadinstitute.barclay.argparser.CommandLineException;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.read.ArtificialReadUtils;
+import org.seqdoop.hadoop_bam.util.VCFFileMerger;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -437,6 +440,101 @@ public final class IntervalUtilsUnitTest extends GATKBaseTest {
         Assert.assertEquals(intervalStringsToGenomeLocs("1", "2", "3").size(), 3);
         Assert.assertEquals(intervalStringsToGenomeLocs("1:1-2", "1:4-5", "2:1-1", "3:2-2").size(), 4);
     }
+
+    // exampled for the integration test
+    // ##contig=<ID=HLA-A*01:01:01:01,length=3503>
+    // ##contig=<ID=HLA-A*01:01:01:02N,length=3291>
+    // ##contig=<ID=HLA-A*01:02,length=3374>
+    // ##contig=<ID=HLA-A*01:03,length=3503>
+    // ##contig=<ID=HLA-A*01:11N,length=3374>
+    // ##contig=<ID=HLA-A*01:20,length=3105>
+    // ##contig=<ID=HLA-A*02:01:01:01,length=3517>
+    // ##contig=<ID=HLA-A*02:01:01:02L,length=3287>
+    // ##contig=<ID=HLA-A*02:02:01,length=2917>
+
+    private SAMSequenceDictionary getAmbiguousContigDictionary() {
+        // each of these strings is both a valid contig name *and* is a valid interval query on some other
+        // contig in the same dictionary
+        List<String> ambiguousContigNames = Arrays.asList(
+                "HLA-A*01:02:03:04",    // prefix HLA-A*01:02:03
+                "HLA-A*01:02:03:04+",   // prefix HLA-A*01:02:03
+                "HLA-A*01:02:03:04:99", // prefix HLA-A*01:02:03:04
+                "HLA-A*01:02:03:04-99", // prefix HLA-A*01:02:03
+                "HLA-A*01:02:03",       // prefix HLA-A*01:02
+                "HLA-A*01:02",          // prefix HLA-A*01
+                "HLA-A*01"              // no valid prefix
+
+//                "HLA-A*"                // (no valid prefix)
+//                "HLA-A*01:02:03:04:",   // none
+//                "HLA-",                 // none
+//                "HLA"                   // none
+        );
+
+        SAMSequenceDictionary getAmbiguousContigDictionary = new SAMSequenceDictionary();
+        ambiguousContigNames.forEach(s -> getAmbiguousContigDictionary.addSequence(new SAMSequenceRecord(s, 122)));
+        return getAmbiguousContigDictionary;
+    }
+
+    @DataProvider(name = "ambiguousIntervalQueries")
+    public Object[][] getAmbiguousIntervalQueries() {
+        return new Object[][]{
+                // query interval string, list of ambiguous contigs
+
+                // query intervals with more than one interpretation
+                { "HLA-A*01:02:03:04",
+                        Arrays.asList(
+                            new SimpleInterval("HLA-A*01:02:03:04", 1, 122),
+                            new SimpleInterval("HLA-A*01:02:03", 4, 4)) },
+                { "HLA-A*01:02:03:04+",
+                        Arrays.asList(
+                                new SimpleInterval("HLA-A*01:02:03:04+", 1, 122),
+                                new SimpleInterval("HLA-A*01:02:03", 4, 122)) },
+                { "HLA-A*01:02:03:04:99",
+                        Arrays.asList(
+                                new SimpleInterval("HLA-A*01:02:03:04:99", 1, 122),
+                                new SimpleInterval("HLA-A*01:02:03:04", 99, 99)) },
+                { "HLA-A*01:02:03:04-99",
+                        Arrays.asList(
+                                new SimpleInterval("HLA-A*01:02:03:04-99", 1, 122),
+                                new SimpleInterval("HLA-A*01:02:03", 4, 99)) },
+                { "HLA-A*01:02:03",
+                        Arrays.asList(
+                                new SimpleInterval("HLA-A*01:02:03", 1, 122),
+                                new SimpleInterval("HLA-A*01:02", 3, 3)) },
+                { "HLA-A*01:02",
+                        Arrays.asList(
+                                new SimpleInterval("HLA-A*01:02", 1, 122),
+                                new SimpleInterval("HLA-A*01", 2, 2)) },
+
+
+                { "HLA:02", Collections.EMPTY_LIST},  // embedded :, but no valid prefix
+                { "HLA-A*01",
+                        Arrays.asList(new SimpleInterval("HLA-A*01", 1, 122)) }
+        };
+    }
+
+    @Test(dataProvider = "ambiguousIntervalQueries")
+    public void testAmbiguousIntervalQueries(final String ambiguousQuery, final List<String> expectedAmbiguousContigs) {
+        SAMSequenceDictionary sd = getAmbiguousContigDictionary();
+        Assert.assertEquals(new HashSet<>(SimpleInterval.getAmbiguousIntervals(ambiguousQuery, sd)), new HashSet<>(expectedAmbiguousContigs));
+    }
+
+//    @Test(dataProvider = "ambiguousIntervals")
+//    public void testAmbiguousIntervals(final String ambiguousIntervalString, final SimpleInterval expectedInterval) {
+//        SAMSequenceDictionary sd;
+//        GenomeLocParser genomeLocParser;
+//
+//        final File testFile = new File ("src/test/resources/org/broadinstitute/hellbender/utils/interval/hg38VariantsInHLALoci.vcf.gz");
+//
+//        try (VCFFileReader vcfReader = new VCFFileReader(testFile, false)) {
+//            sd = vcfReader.getFileHeader().getSequenceDictionary();
+//            genomeLocParser = new GenomeLocParser(sd);
+//        }
+//
+//        final GenomeLoc gLoc = genomeLocParser.parseGenomeLoc(ambiguousIntervalString);
+//        final SimpleInterval actualInterval = new SimpleInterval(gLoc);
+//        Assert.assertEquals(actualInterval, expectedInterval);
+//    }
 
     @Test
     public void testParseUnmappedIntervalArgument() {
