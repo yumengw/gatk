@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * <p>This tool has two run-modes as described below:</p>
  * <dl>
  *     <dt>COHORT run-mode</dt>
- *     <dd>If a model parameter directory is not provided, the tool is run in the COHORT runMode. In this run-mode,
+ *     <dd>If a model parameter directory is not provided, the tool is run in the COHORT mode. In this run-mode,
  *      ploidy model parameters (e.g. coverage bias and variance in each contig) are inferred
  *      along with baseline contig ploidy of each sample. A table specifying priors for the ploidy per contig
  *      is required in this run-mode.
@@ -52,17 +52,17 @@ import java.util.stream.Collectors;
  *
  *     <dt>CASE run-mode</dt>
  *     <dd>If a previously obtained model parameter bundle is provided (e.g. from a previous run on a similar set
- *      of samples), then the tool is run in the CASE runMode. In this run-mode, the ploidy model parameters are
+ *      of samples), then the tool is run in the CASE mode. In this run-mode, the ploidy model parameters are
  *      set to the given parameter bundle and only sample-specific quantities are estimated. Subsequently, the
  *      output directory will contain only the "-calls" subdirectory and is structured as described above.
  *
- *      In this run runMode, the contig ploidy prior table is taken directly from the provided model parameters
+ *      In this run-mode, the contig ploidy prior table is taken directly from the provided model parameters
  *      path and must be not provided again.</dd>
  * </dl>
  *
  * <h3>Examples</h3>
  *
- * <p> COHORT run-mode: </p>
+ * <p>COHORT run-mode:</p>
  * <pre>
  * gatk-launch --javaOptions "-Xmx4g" DetermineGermlineContigPloidy \
  *   --input normal_1.counts.hdf5 \
@@ -72,7 +72,7 @@ import java.util.stream.Collectors;
  *   --output-prefix normal_cohort
  * </pre>
  *
- * <p> CASE run-mode: </p>
+ * <p>CASE run-mode:</p>
  * <pre>
  * gatk-launch --javaOptions "-Xmx4g" DetermineGermlineContigPloidy \
  *   --model a_valid_ploidy_model_dir
