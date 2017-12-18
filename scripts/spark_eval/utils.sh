@@ -12,10 +12,9 @@ time_gatk() {
   EXECUTOR_MEMORY=$4
   DRIVER_MEMORY=$5
   if [ -n "$GCS_CLUSTER" ]; then
-    API_KEY_ARGS="-apiKey $API_KEY"
     SPARK_RUNNER_ARGS="--sparkRunner GCS --cluster $GCS_CLUSTER"
   else
-    API_KEY_ARGS=""
+
     SPARK_RUNNER_ARGS="--sparkRunner SPARK --sparkMaster yarn-client --sparkSubmitCommand spark2-submit"
   fi
   COMMAND=$(echo $GATK_ARGS | awk '{print $1}')
@@ -23,14 +22,14 @@ time_gatk() {
   mkdir -p results
   LOG=logs/${COMMAND}_$(date +%Y%m%d_%H%M%S).log
   mkdir -p logs
-  echo "${GATK_HOME:-../..}/gatk-launch $GATK_ARGS $API_KEY_ARGS \\
+  echo "${GATK_HOME:-../..}/gatk-launch $GATK_ARGS \\
     -- \\
     $SPARK_RUNNER_ARGS \\
     --num-executors $NUM_EXECUTORS --executor-cores $EXECUTOR_CORES --executor-memory $EXECUTOR_MEMORY \\
     --driver-memory $DRIVER_MEMORY \\
     --conf spark.dynamicAllocation.enabled=false" \
   > $LOG
-  ${GATK_HOME:-../..}/gatk-launch $GATK_ARGS $API_KEY_ARGS \
+  ${GATK_HOME:-../..}/gatk-launch $GATK_ARGS \
     -- \
     $SPARK_RUNNER_ARGS \
     --num-executors $NUM_EXECUTORS --executor-cores $EXECUTOR_CORES --executor-memory $EXECUTOR_MEMORY \
