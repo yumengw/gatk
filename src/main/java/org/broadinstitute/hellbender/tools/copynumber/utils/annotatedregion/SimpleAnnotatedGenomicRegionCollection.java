@@ -32,7 +32,7 @@ public class SimpleAnnotatedGenomicRegionCollection extends AbstractLocatableCol
         super(inputFile, mandatoryColumns, recordFromDataLineDecoder, recordToDataLineEncoder);
     }
 
-    /**
+    /** TODO: Update
      *  Reads entire TSV file in one command and stores in RAM.  Please see {@link SimpleAnnotatedGenomicRegion::CONTIG_HEADER},
      *  {@link SimpleAnnotatedGenomicRegion::START_HEADER}, and
      *  {@link SimpleAnnotatedGenomicRegion::END_HEADER} for defining the genomic region.
@@ -51,12 +51,8 @@ public class SimpleAnnotatedGenomicRegionCollection extends AbstractLocatableCol
 
         final Function<DataLine, SimpleAnnotatedGenomicRegion> datalineToRecord = getDataLineToRecordFunction(headersOfInterest);
 
-        final List<String> columnHeaders = Lists.newArrayList(CONTIG_HEADER, START_HEADER, END_HEADER);
         final List<String> otherHeaders = new ArrayList<>(headersOfInterest);
         otherHeaders.sort(String::compareTo);
-
-        columnHeaders.addAll(otherHeaders);
-        final TableColumnCollection outputColumns = new TableColumnCollection(columnHeaders);
 
         final BiConsumer<SimpleAnnotatedGenomicRegion, DataLine> recordToDataLine = getRecordToDataLineBiConsumer(otherHeaders);
 
@@ -64,10 +60,11 @@ public class SimpleAnnotatedGenomicRegionCollection extends AbstractLocatableCol
     }
 
     //TODO: Document somewhere that this class will allow optional input columns.
-    private static Function<DataLine, SimpleAnnotatedGenomicRegion> getDataLineToRecordFunction(Set<String> headersOfInterest) {
+    private static Function<DataLine, SimpleAnnotatedGenomicRegion> getDataLineToRecordFunction(final Set<String> headersOfInterest) {
         return dataLine -> {
 
-                final Map<String, String> annotationMap = headersOfInterest.stream().filter(h -> dataLine.columns().contains(h))
+                final Map<String, String> annotationMap = headersOfInterest.stream()
+                        .filter(h -> dataLine.columns().contains(h))
                         .collect(Collectors.toMap(Function.identity(), dataLine::get));
 
                 return new SimpleAnnotatedGenomicRegion( new SimpleInterval(dataLine.get(CONTIG_HEADER), dataLine.getInt(START_HEADER), dataLine.getInt(END_HEADER)),
@@ -104,6 +101,7 @@ public class SimpleAnnotatedGenomicRegionCollection extends AbstractLocatableCol
 
                 @Override
                 protected boolean isCommentLine(final String[] line) {
+                    // TODO: Fix magic constant
                     return line.length > 0 && (line[0].startsWith(TableUtils.COMMENT_PREFIX) || line[0].startsWith("@"));
                 }
                 @Override

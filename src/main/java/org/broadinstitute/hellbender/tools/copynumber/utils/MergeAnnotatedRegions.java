@@ -8,7 +8,6 @@ import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.programgroups.CopyNumberProgramGroup;
 import org.broadinstitute.hellbender.engine.GATKTool;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
-import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegionCollection;
 import org.broadinstitute.hellbender.utils.IntervalUtils;
 
 import java.io.File;
@@ -45,19 +44,17 @@ public class MergeAnnotatedRegions extends GATKTool {
     public void traverse() {
 
         // Load the seg file
-        final SimpleAnnotatedGenomicRegionCollection initialSegments = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(segmentFile);
+        final List<SimpleAnnotatedGenomicRegion> initialSegments = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(segmentFile);
 
         // Sort the locatables
-
-        final List<SimpleAnnotatedGenomicRegion> segments = IntervalUtils.sortLocatablesBySequenceDictionary(initialSegments.getRecords(),
-                initialSegments.getMetadata().getSequenceDictionary());
+        final List<SimpleAnnotatedGenomicRegion> segments = IntervalUtils.sortLocatablesBySequenceDictionary(initialSegments,
+                getBestAvailableSequenceDictionary());
 
         // Perform the actual merging
         // For each segment, see if we have more than one overlap.  If we do, merge to create a new segment.
         final List<SimpleAnnotatedGenomicRegion> finalSegments = SimpleAnnotatedGenomicRegion.mergeRegions(segments,
                 getBestAvailableSequenceDictionary(), DEFAULT_SEPARATOR);
 
-        final SimpleAnnotatedGenomicRegionCollection finalCollection = SimpleAnnotatedGenomicRegionCollection.create(finalSegments, getBestAvailableSequenceDictionary(), initialSegments.getMandatoryColumns().names());
-        finalCollection.write(outputFile);
+        SimpleAnnotatedGenomicRegion.writeAnnotatedRegionsAsTsv(finalSegments, outputFile);
     }
 }
