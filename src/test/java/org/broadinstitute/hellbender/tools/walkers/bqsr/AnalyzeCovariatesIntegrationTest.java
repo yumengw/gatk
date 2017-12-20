@@ -1,6 +1,7 @@
 package org.broadinstitute.hellbender.tools.walkers.bqsr;
 
 import org.broadinstitute.hellbender.CommandLineProgramTest;
+import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.test.IntegrationTestSpec;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -246,7 +247,7 @@ public final class AnalyzeCovariatesIntegrationTest extends CommandLineProgramTe
         final File beforeFile, final File afterFile) {
 
         final List<String> args = new LinkedList<>();
-        args.add("-ignoreLMT");
+        args.add("-" + AnalyzeCovariates.IGNORE_LMT_SHORT_NAME);
 
         if (csvFileName != null) {
             args.add("-" + AnalyzeCovariates.CSV_ARG_SHORT_NAME);
@@ -257,7 +258,7 @@ public final class AnalyzeCovariatesIntegrationTest extends CommandLineProgramTe
             args.add("'" + pdfFileName + "'");
         }
         if (bqsrFile != null) {
-            args.add("-bqsr");
+            args.add("-" + StandardArgumentDefinitions.BQSR_TABLE_SHORT_NAME);
             args.add("'" + bqsrFile.getAbsoluteFile().toString() + "'");
         }
         if (beforeFile != null) {

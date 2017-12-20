@@ -8,6 +8,21 @@ import org.broadinstitute.hellbender.engine.ReadWalker;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 
+/**
+ * Calculate and print to the standard output the overall number of bases in a SAM/BAM/CRAM file
+ *
+ * <h3>Input</h3>
+ * <ul>
+ *     <li> A single BAM file</li>
+ * </ul>
+ *
+ * <h3>Example</h3>
+ *
+ * <pre>
+ *   gatk CountBases \
+ *     -I input_reads.bam
+ * </pre>
+ */
 @CommandLineProgramProperties(
 	summary = "Counts bases in a SAM/BAM/CRAM file",
 	oneLineSummary = "Count bases in a SAM/BAM/CRAM file",

@@ -16,15 +16,39 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * (EXPERIMENTAL) Emit a single sample name from the bam header into an output file.
+ *
+ * <p>
+ *     Note: If the bam has zero or more than one sample names in the header, this tool will error, by design.
+ *     This tool has not been tested extensively.  Most options supported by the GATK are irrelevant for this tool.
+ * </p>
+ *
+ * <h3>Input</h3>
+ * <ul>
+ *     <li>A BAM file with a single sample name in the header</li>
+ * </ul>
+ *
+ * <h3>Output</h3>
+ * <ul>
+ *     <li>A file with a single sample name in it</li>
+ * </ul>
+ *
+ * <h3>Example Usage</h3>
+ * <pre>
+ *   gatk GetSampleName /
+ *     -I input.bam /
+ *     -O sample_name.txt
+ * </pre>
+ */
+@BetaFeature
 @DocumentedFeature
 @CommandLineProgramProperties(
-        oneLineSummary = "(EXPERIMENTAL) Emit a single sample name from the bam header into an output file.",
-        summary = "If the bam has zero or more than one sample names in the header, this tool will error, by design.\n" +
-                "  This tool has not been tested extensively.  Most options supported by the GATK are irrelevant for this tool.",
+        summary = "(EXPERIMENTAL) Emit a single sample name from the bam header into an output file",
+        oneLineSummary = "(EXPERIMENTAL) Emit a single sample name",
         programGroup = QCProgramGroup.class
 )
-@BetaFeature
-final public class GetSampleName extends GATKTool{
+final public class GetSampleName extends GATKTool {
 
     @Argument(
             doc = "Output file with only the sample name in it.",
