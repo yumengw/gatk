@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
+import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberStandardArgument;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegionCollection;
@@ -113,6 +114,27 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
         Assert.assertEquals(regions.size(), 13);
         Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == 4));
         assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions.getRecords());
+    }
+
+    @Test(expectedExceptions = UserException.BadInput.class)
+    public void testFailureIfNotAllColsOfInterestExist() throws IOException {
+        // This test is a bit more like the real world
+        final File outputFile = File.createTempFile("combineseg_", ".tsv");
+        final List<String> arguments = new ArrayList<>();
+        arguments.add("-" + StandardArgumentDefinitions.REFERENCE_SHORT_NAME);
+        arguments.add(REFERENCE_FILE);
+        arguments.add("-" + CopyNumberStandardArgument.SEGMENTS_FILE_SHORT_NAME);
+        arguments.add(INPUT_SEGMENTS_FILE_WITH_DIFFERENT_HEADERS);
+        arguments.add("-" + CopyNumberStandardArgument.SEGMENTS_FILE_SHORT_NAME);
+        arguments.add(GROUND_TRUTH_SEGMENTS_FILE);
+        arguments.add("-" + CombineSegmentBreakpoints.COLUMNS_OF_INTEREST_SHORT_NAME);
+        arguments.add("Segment_Mean_THAT_DOES_NOT_EXIST");
+        arguments.add("-" + CombineSegmentBreakpoints.COLUMNS_OF_INTEREST_SHORT_NAME);
+        arguments.add("Segment_Call");
+        arguments.add("-" + StandardArgumentDefinitions.OUTPUT_SHORT_NAME);
+        arguments.add(outputFile.getAbsolutePath());
+        runCommandLine(arguments);
+
     }
 
     private void assertUnionedSegFiles(final String segmentCall1, final String segmentMean1, final String segmentMean2,

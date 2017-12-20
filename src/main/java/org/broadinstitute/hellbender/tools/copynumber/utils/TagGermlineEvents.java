@@ -13,6 +13,7 @@ import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.Simp
 import org.broadinstitute.hellbender.tools.copynumber.utils.germlinetagging.SimpleGermlineTagger;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 @CommandLineProgramProperties(
@@ -66,7 +67,10 @@ public class TagGermlineEvents extends GATKTool{
                 initialTumorSegments, initialNormalSegments, callHeader, getBestAvailableSequenceDictionary(),
                 GERMLINE_TAG_HEADER, paddingInBp);
 
-        final SimpleAnnotatedGenomicRegionCollection finalCollection = SimpleAnnotatedGenomicRegionCollection.updateSegments(tumorSegments, tumorSimpleAnnotatedGenomicRegionCollection);
+        final SimpleAnnotatedGenomicRegionCollection finalCollection =
+                SimpleAnnotatedGenomicRegionCollection.updateSegments(tumorSegments,
+                        tumorSimpleAnnotatedGenomicRegionCollection,
+                        new ArrayList<>(tumorSegments.get(0).getAnnotations().keySet()));
         finalCollection.write(outputFile);
     }
 

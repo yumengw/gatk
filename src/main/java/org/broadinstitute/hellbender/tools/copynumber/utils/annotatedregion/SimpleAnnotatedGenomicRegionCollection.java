@@ -12,6 +12,7 @@ import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.tsv.DataLine;
 import org.broadinstitute.hellbender.utils.tsv.TableColumnCollection;
 import org.broadinstitute.hellbender.utils.tsv.TableReader;
+import org.broadinstitute.hellbender.utils.tsv.TableUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,6 +101,11 @@ public class SimpleAnnotatedGenomicRegionCollection extends AbstractLocatableCol
      */
     public static SimpleAnnotatedGenomicRegionCollection readAnnotatedRegions(final File tsvRegionFile) {
         try (final TableReader<SimpleAnnotatedGenomicRegion> reader = new TableReader<SimpleAnnotatedGenomicRegion>(tsvRegionFile) {
+
+                @Override
+                protected boolean isCommentLine(final String[] line) {
+                    return line.length > 0 && (line[0].startsWith(TableUtils.COMMENT_PREFIX) || line[0].startsWith("@"));
+                }
                 @Override
                 protected SimpleAnnotatedGenomicRegion createRecord(final DataLine dataLine) {
                     // no op
@@ -119,9 +125,8 @@ public class SimpleAnnotatedGenomicRegionCollection extends AbstractLocatableCol
      * @return
      */
     public static SimpleAnnotatedGenomicRegionCollection updateSegments(final List<SimpleAnnotatedGenomicRegion> simpleAnnotatedGenomicRegions,
-                                                                final SimpleAnnotatedGenomicRegionCollection collection) {
-        return new SimpleAnnotatedGenomicRegionCollection(collection.getMetadata(), simpleAnnotatedGenomicRegions, collection.getMandatoryColumns(),
-                getDataLineToRecordFunction(new HashSet<>(collection.getMandatoryColumns().names())), getRecordToDataLineBiConsumer(collection.getMandatoryColumns().names()));
+                                                                final SimpleAnnotatedGenomicRegionCollection collection, final List<String> annotations) {
+        return create(simpleAnnotatedGenomicRegions, collection.getMetadata().getSequenceDictionary(), annotations);
     }
 
     /** TODO: Docs
