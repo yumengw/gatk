@@ -6,6 +6,7 @@ import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.tools.copynumber.formats.CopyNumberStandardArgument;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
+import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegionCollection;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -47,11 +48,11 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO", "CALL", "Segment_Mean", "Segment_Call"));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO", "CALL", "Segment_Mean", "Segment_Call"));
         Assert.assertEquals(regions.size(), 4);
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().size() == columnSet.size()));
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().keySet().containsAll(columnSet)));
-        Assert.assertTrue(regions.stream().noneMatch(r -> r.getAnnotations().values().contains("")));
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == columnSet.size()));
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().keySet().containsAll(columnSet)));
+        Assert.assertTrue(regions.getRecords().stream().noneMatch(r -> r.getAnnotations().values().contains("")));
     }
 
     @Test
@@ -75,15 +76,14 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO_1", "CALL_1", "MEAN_LOG2_COPY_RATIO_2", "CALL_2"));
-
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO_1", "CALL_1", "MEAN_LOG2_COPY_RATIO_2", "CALL_2"));
         final Set<String> gtColumnSet = Sets.newHashSet("MEAN_LOG2_COPY_RATIO_1", "CALL_1", "MEAN_LOG2_COPY_RATIO_2", "CALL_2");
         Assert.assertEquals(regions.size(), 4);
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().size() == gtColumnSet.size()));
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().keySet().containsAll(gtColumnSet)));
-        Assert.assertTrue(regions.stream().noneMatch(r -> r.getAnnotations().values().contains("")));
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().get("MEAN_LOG2_COPY_RATIO_1").equals(r.getAnnotations().get("MEAN_LOG2_COPY_RATIO_2"))));
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().get("CALL_1").equals(r.getAnnotations().get("CALL_2"))));
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == gtColumnSet.size()));
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().keySet().containsAll(gtColumnSet)));
+        Assert.assertTrue(regions.getRecords().stream().noneMatch(r -> r.getAnnotations().values().contains("")));
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().get("MEAN_LOG2_COPY_RATIO_1").equals(r.getAnnotations().get("MEAN_LOG2_COPY_RATIO_2"))));
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().get("CALL_1").equals(r.getAnnotations().get("CALL_2"))));
     }
     @Test
     public void testRunWithNotExactOverlaps() throws IOException {
@@ -109,10 +109,10 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
         final String SEGMENT_MEAN_1 = "Segment_Mean_1";
         final String SEGMENT_MEAN_2 = "Segment_Mean_2";
         final String SEGMENT_CALL_2 = "Segment_Call_2";
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
         Assert.assertEquals(regions.size(), 13);
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().size() == 4));
-        assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions);
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == 4));
+        assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions.getRecords());
     }
 
     private void assertUnionedSegFiles(final String segmentCall1, final String segmentMean1, final String segmentMean2,
@@ -177,9 +177,9 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
         final String SEGMENT_MEAN_1 = "Segment_Mean_" + TEST;
         final String SEGMENT_MEAN_2 = "Segment_Mean_" + GT;
         final String SEGMENT_CALL_2 = "Segment_Call_" + GT;
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
         Assert.assertEquals(regions.size(), 13);
-        Assert.assertTrue(regions.stream().allMatch(r -> r.getAnnotations().size() == 4));
-        assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions);
+        Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == 4));
+        assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions.getRecords());
     }
 }

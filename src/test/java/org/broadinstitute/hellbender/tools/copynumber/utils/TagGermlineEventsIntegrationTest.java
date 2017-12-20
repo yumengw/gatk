@@ -3,8 +3,9 @@ package org.broadinstitute.hellbender.tools.copynumber.utils;
 import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.cmdline.ExomeStandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
-import org.broadinstitute.hellbender.tools.copynumber.coverage.caller.CalledCopyRatioSegment;
+import org.broadinstitute.hellbender.tools.copynumber.formats.records.CalledCopyRatioSegment;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
+import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegionCollection;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -41,7 +42,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile);
+        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile).getRecords();
 
         // Test that the germline calls are 0, -, 0, -
         Assert.assertEquals(regions.get(0).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
@@ -49,7 +50,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(regions.get(2).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
         Assert.assertEquals(regions.get(3).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.DELETION.getOutputString());
 
-        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_MATCHED_NORMAL_SEG_FILE));
+        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_MATCHED_NORMAL_SEG_FILE)).getRecords();
         assertNoRegionChanges(regions, regionsInput);
     }
 
@@ -69,7 +70,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile);
+        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile).getRecords();
 
         // Test that the germline calls are 0, 0, 0, -
         Assert.assertEquals(regions.get(0).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
@@ -77,7 +78,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(regions.get(2).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
         Assert.assertEquals(regions.get(3).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.DELETION.getOutputString());
 
-        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_ALMOST_MATCHED_NORMAL_SEG_FILE));
+        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_ALMOST_MATCHED_NORMAL_SEG_FILE)).getRecords();
         assertNoRegionChanges(regions, regionsInput);
     }
 
@@ -97,7 +98,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile);
+        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile).getRecords();
 
         // Test that the germline calls are 0, 0, 0, -, -
         Assert.assertEquals(regions.get(0).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
@@ -106,7 +107,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(regions.get(3).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.DELETION.getOutputString());
         Assert.assertEquals(regions.get(4).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.DELETION.getOutputString());
 
-        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_SPLIT_ALMOST_MATCHED_NORMAL_SEG_FILE));
+        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_SPLIT_ALMOST_MATCHED_NORMAL_SEG_FILE)).getRecords();
         assertNoRegionChanges(regions, regionsInput);
     }
 
@@ -126,7 +127,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile);
+        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile).getRecords();
 
         // Test that the germline calls are 0, 0, 0, 0
         Assert.assertEquals(regions.get(0).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
@@ -134,7 +135,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(regions.get(2).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
         Assert.assertEquals(regions.get(3).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
 
-        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_NOT_MATCHED_NORMAL_SEG_FILE));
+        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_NOT_MATCHED_NORMAL_SEG_FILE)).getRecords();
         assertNoRegionChanges(regions, regionsInput);
     }
 
@@ -166,7 +167,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
 
         Assert.assertTrue(outputFile.exists());
 
-        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(outputFile);
+        final List<SimpleAnnotatedGenomicRegion> regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile).getRecords();
 
         // Test that the germline calls are 0, 0, 0, 0, 0
         Assert.assertEquals(regions.get(0).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
@@ -174,7 +175,7 @@ public class TagGermlineEventsIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(regions.get(2).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
         Assert.assertEquals(regions.get(3).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
         Assert.assertEquals(regions.get(4).getAnnotationValue(TagGermlineEvents.GERMLINE_TAG_HEADER), CalledCopyRatioSegment.Call.NEUTRAL.getOutputString());
-        final List<SimpleAnnotatedGenomicRegion> regionsInput = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_SPLIT_NO_MATCHED_NORMAL_SEG_FILE));
+        final List<SimpleAnnotatedGenomicRegion> regionsInput =SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(new File(TAG_GERMLINE_TUMOR_SPLIT_NO_MATCHED_NORMAL_SEG_FILE)).getRecords();
         assertNoRegionChanges(regions, regionsInput);
     }
 }

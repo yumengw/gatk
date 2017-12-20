@@ -5,7 +5,7 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.OverlapDetector;
 import htsjdk.samtools.util.PeekableIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.broadinstitute.hellbender.tools.copynumber.coverage.caller.CalledCopyRatioSegment;
+import org.broadinstitute.hellbender.tools.copynumber.formats.records.CalledCopyRatioSegment;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
 import org.broadinstitute.hellbender.utils.IntervalUtils;
 import org.broadinstitute.hellbender.utils.Utils;

@@ -7,8 +7,9 @@ import org.broadinstitute.hellbender.cmdline.ExomeStandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.programgroups.CopyNumberProgramGroup;
 import org.broadinstitute.hellbender.engine.GATKTool;
-import org.broadinstitute.hellbender.tools.copynumber.coverage.caller.CalledCopyRatioSegmentCollection;
+import org.broadinstitute.hellbender.tools.copynumber.formats.collections.CalledCopyRatioSegmentCollection;
 import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
+import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegionCollection;
 import org.broadinstitute.hellbender.tools.copynumber.utils.germlinetagging.SimpleGermlineTagger;
 
 import java.io.File;
@@ -55,8 +56,9 @@ public class TagGermlineEvents extends GATKTool{
 
     @Override
     public void traverse() {
-        final List<SimpleAnnotatedGenomicRegion> initialTumorSegments = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(tumorSegmentFile);
-        final List<SimpleAnnotatedGenomicRegion> initialNormalSegments = SimpleAnnotatedGenomicRegion.readAnnotatedRegions(calledNormalSegmentFile);
+        final SimpleAnnotatedGenomicRegionCollection tumorSimpleAnnotatedGenomicRegionCollection = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(tumorSegmentFile);
+        final List<SimpleAnnotatedGenomicRegion> initialTumorSegments = tumorSimpleAnnotatedGenomicRegionCollection.getRecords();
+        final List<SimpleAnnotatedGenomicRegion> initialNormalSegments = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(calledNormalSegmentFile).getRecords();
 
         final String callHeader = CalledCopyRatioSegmentCollection.CalledCopyRatioSegmentTableColumn.CALL.toString();
 
@@ -64,7 +66,8 @@ public class TagGermlineEvents extends GATKTool{
                 initialTumorSegments, initialNormalSegments, callHeader, getBestAvailableSequenceDictionary(),
                 GERMLINE_TAG_HEADER, paddingInBp);
 
-        SimpleAnnotatedGenomicRegion.writeAnnotatedRegionsAsTsv(tumorSegments, outputFile);
+        final SimpleAnnotatedGenomicRegionCollection finalCollection = SimpleAnnotatedGenomicRegionCollection.updateSegments(tumorSegments, tumorSimpleAnnotatedGenomicRegionCollection);
+        finalCollection.write(outputFile);
     }
 
     @Override
