@@ -7,6 +7,7 @@ import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.funcotator.DataSourceFuncotationFactory;
 import org.broadinstitute.hellbender.tools.funcotator.Funcotation;
+import org.broadinstitute.hellbender.tools.funcotator.FuncotatorArgumentDefinitions;
 import org.broadinstitute.hellbender.tools.funcotator.dataSources.TableFuncotation;
 import org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotation;
 import org.broadinstitute.hellbender.utils.nio.PathLineIterator;
@@ -191,6 +192,11 @@ public class SimpleKeyXsvFuncotationFactory extends DataSourceFuncotationFactory
         setOverrideValuesInFuncotations(outputFuncotations);
 
         return outputFuncotations;
+    }
+
+    @Override
+    public FuncotatorArgumentDefinitions.DataSourceType getType() {
+        return FuncotatorArgumentDefinitions.DataSourceType.SIMPLE_XSV;
     }
 
     //==================================================================================================================

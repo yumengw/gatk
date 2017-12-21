@@ -269,6 +269,11 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
         throw new GATKException("This method should never be called on a "+ this.getClass().getName());
     }
 
+    @Override
+    public FuncotatorArgumentDefinitions.DataSourceType getType() {
+        return FuncotatorArgumentDefinitions.DataSourceType.GENCODE;
+    }
+
     //==================================================================================================================
     // Static Methods:
 
