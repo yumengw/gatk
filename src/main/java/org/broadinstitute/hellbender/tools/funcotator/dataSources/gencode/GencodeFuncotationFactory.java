@@ -156,7 +156,7 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
                                      final FuncotatorArgumentDefinitions.TranscriptSelectionMode transcriptSelectionMode,
                                      final Set<String> userRequestedTranscripts,
                                      final LinkedHashMap<String, String> annotationOverrides) {
-        transcriptFastaReferenceDataSource = ReferenceDataSource.of(gencodeTranscriptFastaFile);
+        transcriptFastaReferenceDataSource = ReferenceDataSource.of(gencodeTranscriptFastaFile.toPath());
         transcriptIdMap = createTranscriptIdMap(transcriptFastaReferenceDataSource);
 
         this.transcriptSelectionMode = transcriptSelectionMode;

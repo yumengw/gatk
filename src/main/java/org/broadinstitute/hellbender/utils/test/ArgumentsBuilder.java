@@ -3,8 +3,10 @@ package org.broadinstitute.hellbender.utils.test;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.utils.Utils;
+import org.scalatest.selenium.WebBrowser;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,6 +75,13 @@ public final class ArgumentsBuilder {
         return this;
     }
 
+    public ArgumentsBuilder addReference(Path reference){
+        return addArgument(StandardArgumentDefinitions.REFERENCE_LONG_NAME, reference);
+    }
+
+    public ArgumentsBuilder addArgument(String argument, Path path){
+        return addArgument(argument, path.toUri().toString());
+    }
     /**
      * add a vcf file argument using {@link StandardArgumentDefinitions#VARIANT_LONG_NAME}
      */

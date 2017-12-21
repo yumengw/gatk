@@ -10,11 +10,13 @@ import org.broadinstitute.hellbender.tools.copynumber.formats.metadata.SimpleSam
 import org.broadinstitute.hellbender.tools.copynumber.formats.records.AllelicCount;
 import org.broadinstitute.hellbender.utils.Nucleotide;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -27,7 +29,7 @@ public final class CollectAllelicCountsIntegrationTest extends CommandLineProgra
     private static final File NORMAL_BAM_FILE = new File(TEST_SUB_DIR, "collect-allelic-counts-normal.bam");
     private static final File TUMOR_BAM_FILE = new File(TEST_SUB_DIR, "collect-allelic-counts-tumor.bam");
     private static final File SITES_FILE = new File(TEST_SUB_DIR, "collect-allelic-counts-sites.interval_list");
-    private static final File REFERENCE_FILE = new File(hg19MiniReference);
+    private static final Path REFERENCE_FILE = IOUtils.getPath(hg19MiniReference);
 
     private static final String NORMAL_SAMPLE_NAME_EXPECTED = "20";
     private static final String TUMOR_SAMPLE_NAME_EXPECTED = "20";
@@ -117,7 +119,7 @@ public final class CollectAllelicCountsIntegrationTest extends CommandLineProgra
         final String[] arguments = {
                 "-" + StandardArgumentDefinitions.INPUT_SHORT_NAME, inputBAMFile.getAbsolutePath(),
                 "-L", SITES_FILE.getAbsolutePath(),
-                "-" + StandardArgumentDefinitions.REFERENCE_SHORT_NAME, REFERENCE_FILE.getAbsolutePath(),
+                "-" + StandardArgumentDefinitions.REFERENCE_SHORT_NAME, REFERENCE_FILE.toUri().toString(),
                 "-" + StandardArgumentDefinitions.OUTPUT_SHORT_NAME, outputFile.getAbsolutePath()
         };
         runCommandLine(arguments);

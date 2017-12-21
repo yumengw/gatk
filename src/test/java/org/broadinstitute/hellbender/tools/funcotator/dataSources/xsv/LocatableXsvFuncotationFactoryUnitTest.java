@@ -15,6 +15,7 @@ import org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.Gencod
 import org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotationBuilder;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.codecs.xsvLocatableTable.XsvTableFeature;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -38,8 +39,8 @@ public class LocatableXsvFuncotationFactoryUnitTest extends GATKBaseTest {
     static {
         referenceDataSourceMap = new HashMap<>(2);
 
-        referenceDataSourceMap.put(FuncotatorTestConstants.HG19_CHR19_REFERENCE_FILE_NAME, ReferenceDataSource.of( new File(FuncotatorTestConstants.HG19_CHR19_REFERENCE_FILE_NAME) ));
-        referenceDataSourceMap.put(FuncotatorTestConstants.HG19_CHR3_REFERENCE_FILE_NAME, ReferenceDataSource.of( new File(FuncotatorTestConstants.HG19_CHR3_REFERENCE_FILE_NAME) ));
+        referenceDataSourceMap.put(FuncotatorTestConstants.HG19_CHR19_REFERENCE_FILE_NAME, ReferenceDataSource.of( IOUtils.getPath(FuncotatorTestConstants.HG19_CHR19_REFERENCE_FILE_NAME) ));
+        referenceDataSourceMap.put(FuncotatorTestConstants.HG19_CHR3_REFERENCE_FILE_NAME, ReferenceDataSource.of( IOUtils.getPath(FuncotatorTestConstants.HG19_CHR3_REFERENCE_FILE_NAME) ));
     }
 
     //==================================================================================================================
