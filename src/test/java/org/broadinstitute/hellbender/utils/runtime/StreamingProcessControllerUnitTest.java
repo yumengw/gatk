@@ -6,7 +6,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -51,8 +52,8 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         response = controller.getProcessOutputByPrompt();
         StreamingPythonTestUtils.assertPythonPrompt(response, PYTHON_PROMPT);
 
-        try (final FileInputStream fis = new FileInputStream(tempFile);
-             final BufferedLineReader br = new BufferedLineReader(fis)) {
+        try (final FileReader fr = new FileReader(tempFile);
+             final BufferedReader br = new BufferedReader(fr)) {
             Assert.assertEquals(br.readLine(), "39");
         }
 
@@ -103,8 +104,8 @@ public class StreamingProcessControllerUnitTest extends BaseTest {
         controller.terminate();
         Assert.assertFalse(controller.getProcess().isAlive());
 
-        try (final FileInputStream fis = new FileInputStream(tempFile);
-             final BufferedLineReader br = new BufferedLineReader(fis)) {
+        try (final FileReader fis = new FileReader(tempFile);
+             final BufferedReader br = new BufferedReader(fis)) {
             Assert.assertEquals(br.readLine(), "some output");
         }
     }
