@@ -17,6 +17,7 @@
 #  TUMOR_1_BAM</TAB>TUMOR_1_BAM_INDEX
 #  TUMOR_2_BAM</TAB>TUMOR_2_BAM_INDEX
 #   . . .
+#Alternatively, one can input tumors, tumor indices, normals, and normal indices as arrays directly in the json input parameters
 
 import "mutect2.wdl" as m2
 
@@ -58,8 +59,23 @@ workflow Mutect2_Multi {
     # gatk4_jar needs to be a String input to the workflow in order to work in a Docker image
 	String gatk4_jar
 	Int scatter_count
-	File pair_list
-	Array[Array[String]] pairs = read_tsv(pair_list)
+
+	Array[String]? tumor_bams
+    Array[String]? tumor_bais
+	Array[String]? normal_bams
+    Array[String]? normal_bais
+	File? pair_list
+
+    Boolean use_pair_file = defined(pair_list)
+	Int number_of_samples = if use_pair_file then length(read_lines(pair_list)) else length(tumor_bams)
+
+	if (use_pair_file) {
+	    Array[Array[String]] pairs = read_tsv(pair_list)
+	}
+
+
+
+
 	File? intervals
 	File ref_fasta
 	File ref_fasta_index
@@ -89,7 +105,9 @@ workflow Mutect2_Multi {
      String oncotator_docker
      Int? preemptible_attempts
 
-	scatter( row in pairs ) {
+	scatter( n in range(number_of_samples) ) {
+
+        Array[String] row = if use_pair_file then pairs[n] else ( if defined(normal_bams) then [tumor_bams[n], tumor_bais[n], normal_bams[n], normal_bais[n]] else [tumor_bams[n], tumor_bais[n]] )
 	    #      If the condition is true, variables inside the 'if' block retain their values outside the block.
 	    #      Otherwise they are treated as null, which in WDL is equivalent to an empty optional
         if(length(row) == 4) {
