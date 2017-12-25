@@ -4,7 +4,11 @@ workflow Mutect2_Panel {
     # gatk4_jar needs to be a String input to the workflow in order to work in a Docker image
 	String gatk4_jar
 	Int scatter_count
-	File normals_list
+
+    Array[String]? normal_bams
+    Array[String]? normal_bais
+	File? normals_list
+
 	File? intervals
 	File ref_fasta
 	File ref_fasta_index
@@ -20,6 +24,8 @@ workflow Mutect2_Panel {
         input:
             gatk4_jar = gatk4_jar,
             scatter_count = scatter_count,
+            tumor_bams = normal_bams,
+            tumor_bais = normal_bais,
             pair_list = normals_list,
             intervals = intervals,
             ref_fasta = ref_fasta,
