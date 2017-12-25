@@ -68,12 +68,7 @@ workflow Mutect2_Multi {
 
     Boolean use_pair_file = defined(pair_list)
 	Int number_of_samples = if use_pair_file then length(read_lines(pair_list)) else length(tumor_bams)
-
-	if (use_pair_file) {
-	    Array[Array[String]] pairs = read_tsv(pair_list)
-	}
-
-
+	Array[Array[String]] pairs = if use_pair_file then read_tsv(pair_list) else [[]]
 
 
 	File? intervals
