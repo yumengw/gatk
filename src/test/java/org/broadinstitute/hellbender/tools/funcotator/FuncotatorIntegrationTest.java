@@ -73,10 +73,10 @@ public class FuncotatorIntegrationTest extends CommandLineProgramTest {
 
         final String outFileName = "funcotator_tmp_out_" + xsvMatchType.toString() + "_" + transcriptName + ".vcf";
 
-//        final File outputFile = createTempFile(outFileName.substring(0,outFileName.length()-4), outFileName.substring(outFileName.length()-4));
-        final File outputFile = new File(outFileName);
+        final File outputFile = createTempFile(outFileName.substring(0,outFileName.length()-4), outFileName.substring(outFileName.length()-4));
+//        final File outputFile = new File(outFileName);
 
-        final List<String> arguments = new ArrayList<>();
+g        final List<String> arguments = new ArrayList<>();
 
         // Required Args:
         arguments.add("--" + FuncotatorArgumentDefinitions.DATA_SOURCES_PATH_LONG_NAME);
