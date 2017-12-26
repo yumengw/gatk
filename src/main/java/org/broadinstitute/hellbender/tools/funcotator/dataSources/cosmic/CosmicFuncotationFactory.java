@@ -202,7 +202,13 @@ public class CosmicFuncotationFactory extends DataSourceFuncotationFactory {
 
             final SimpleInterval genomePosition = new SimpleInterval(variant.getContig(), variant.getStart(), variant.getEnd());
 
-            final SimpleInterval proteinPosition = parseProteinString(gencodeFuncotation.getProteinChange());
+            final SimpleInterval proteinPosition;
+            if ( gencodeFuncotation.getProteinChange() != null ) {
+                proteinPosition = parseProteinString(gencodeFuncotation.getProteinChange());
+            }
+            else {
+                proteinPosition = null;
+            }
 
             try {
                 try ( final Statement statement = dbConnection.createStatement() ) {
